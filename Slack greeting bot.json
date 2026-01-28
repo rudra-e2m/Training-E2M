@@ -1,0 +1,69 @@
+{
+  "name": "Slack greeting bot",
+  "nodes": [
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0ABU9WPRH7",
+          "mode": "id"
+        },
+        "text": "👋 Hello from n8n! Hope you’re having a great day 🚀",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        96,
+        -32
+      ],
+      "id": "7a89d9f7-aa52-403d-95d5-7d90cac12dcd",
+      "name": "Send a message",
+      "webhookId": "cd498de4-1e92-42a0-bc7d-63b8d7d9140b",
+      "credentials": {
+        "slackApi": {
+          "id": "mKao5ONa2odcvCrm",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -32
+      ],
+      "id": "f91ff0cc-c46c-4805-a5c6-599d6de32df1",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "052c0b76-7bd4-474a-9522-7bb4df5b32bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "877aee74a0a2e2e56c282a106f79c1ef3407946268c6f44dcd0f791b51816276"
+  },
+  "id": "9QDoFeCA8a6QKv76PdG1D",
+  "tags": []
+}
