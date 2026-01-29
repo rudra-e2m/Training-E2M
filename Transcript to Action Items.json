@@ -1,0 +1,265 @@
+{
+  "name": "Transcript to Action Items",
+  "nodes": [
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "transcript",
+              "value": "Call Transcript: Project Management Software Discovery Date: October 24, 2023 Participants: * Sarah Jenkins (Account Executive, CloudSync)  David Chen (Operations Manager, BuildRight Construction)  [00:00:05] Sarah Jenkins: Hi David, thanks for joining today. How’s your week going so far?  [00:00:12] David Chen: It’s been busy, Sarah. We’re in the middle of a big project rollout in Chicago, so things are a bit chaotic on our end.  [00:00:20] Sarah Jenkins: I can imagine. I’ll make sure we keep this efficient then. The goal for today is to understand your current workflow at BuildRight and see if CloudSync can help streamline those communication gaps you mentioned in your email. Does that sound like a good plan?  [00:00:35] David Chen: Perfect. That’s exactly what we need.  [00:00:42] Sarah Jenkins: Great. To start, could you walk me through how your team currently tracks project milestones?  [00:00:50] David Chen: Honestly, it’s a bit of a \"Frankenstein\" system. We use a mix of Excel spreadsheets, internal emails, and a lot of WhatsApp groups for the field crews. The biggest issue is that the office team is often two or three days behind what’s actually happening on the job site.  [00:01:15] Sarah Jenkins: That lag time is common in construction. What happens when a deadline is missed and the office isn’t aware?  [00:01:25] David Chen: It’s a domino effect. We end up paying for subcontractors to stand around because the site wasn't ready, or we order materials too early and have nowhere to store them. Last quarter, that \"miscommunication tax\" cost us about $15,000.  [00:01:45] Sarah Jenkins: That’s a significant hit to the margin. If we could provide a real-time dashboard where the field crew logs progress via a mobile app, how would that change your daily operations?  [00:02:00] David Chen: It would be a game-changer. If I can see a delay in real-time, I can pivot the schedule immediately instead of waiting for the Friday afternoon recap.  [00:02:15] Sarah Jenkins: Understood. Let’s dive into the platform so I can show you exactly how that mobile-to-office sync works."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "465c3686-9975-4455-9331-f1ff47a277aa",
+      "name": "Set - Mock Transcript",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the transcript from the previous node\nconst transcript = $input.item.json.transcript;\n\n// Regex to find timestamps like [00:00] or [00:00:00]\nconst timestampRegex = /\\[\\d{2}:\\d{2}(:\\d{2})?\\]/g;\n\n// Remove timestamps and clean extra spaces\nconst cleanedTranscript = transcript.replace(timestampRegex, '').replace(/\\s+/g, ' ').trim();\n\nreturn {\n  json: {\n    cleanedTranscript\n  }\n};"
+      },
+      "id": "cd1bec22-6048-42f3-b317-e17356843764",
+      "name": "Code - Remove Timestamps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the text from the OpenAI node\nconst fullText = $input.first().json.text;\n\n// 2. Split the text into lines\nconst lines = fullText.split('\\n');\n\n// 3. Filter the lines to find actual tasks \n// (Removing empty lines, table separators, and headers)\nconst actionItems = lines\n  .map(line => line.trim())\n  .filter(line => {\n    return line.length > 0 && \n           !line.includes('---') && \n           !line.includes('| Item |') &&\n           !line.startsWith('**');\n  })\n  .map(task => {\n    // Clean up markdown bullets if the AI added them\n    const cleanTask = task.replace(/^[•\\-\\*\\d\\.]+\\s+/, '').replace(/\\|/g, '').trim();\n    return {\n      json: {\n        action_item: cleanTask\n      }\n    };\n  });\n\nreturn actionItems;"
+      },
+      "id": "94416c88-61a0-446d-bf7b-45da696ff917",
+      "name": "Code - Split Lines to Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        640,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3b3c34fa-1384-42c1-91ca-1a3ec25a7ece",
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        832,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a task extraction engine. Analyze the transcript and give summary based on it:\n\n {{ $json.cleanedTranscript }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        256,
+        32
+      ],
+      "id": "1c0b6642-db7d-49e5-a128-d9ee07fe0971",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        240,
+        208
+      ],
+      "id": "493a3c74-c047-42e0-83e6-421d67981598",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "blBAaTEtlWB5rPQ8",
+          "name": "Rudra-training"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        240
+      ],
+      "id": "e30415da-b401-4e54-bed0-acf494f7cb86",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        32
+      ],
+      "id": "98958feb-757b-49f2-afbe-33ca1b777033",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2f73eaaa39708095ba8fe11e9ad55436",
+          "mode": "id"
+        },
+        "title": "Transcript action",
+        "blockUi": {
+          "blockValues": [
+            {
+              "textContent": "={{ $json.action_item }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -64
+      ],
+      "id": "1432880f-c160-4b28-8120-6a034c2f171a",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "5KGHtbiX3BizSxMX",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Basic LLM Chain": [
+      {
+        "json": {
+          "text": "**Call Summary – Project Management Software Discovery**\n\n| Item | Details |\n|------|---------|\n| **Date & Participants** | Oct 24 2023 – Sarah Jenkins (CloudSync, Account Executive) & David Chen (BuildRight Construction, Operations Manager) |\n| **Objective** | Understand BuildRight’s current workflow & pain points, and assess how CloudSync can streamline communication gaps. |\n| **Current Workflow** | • “Frankenstein” mix of Excel, internal email, and WhatsApp groups.<br>• Field crews update via informal channels; office team lags 2‑3 days behind on‑site status. |\n| **Key Pain Points** | • Missed deadlines trigger a domino effect: subcontractors idle, materials over‑ordered, storage issues.<br>• Last quarter “miscommunication tax” cost ~$15 k. |\n| **Potential Solution Highlighted** | • Real‑time dashboard that syncs mobile field updates to office.<br>• Immediate visibility of delays allows instant schedule pivoting instead of waiting for Friday recaps. |\n| **Next Steps Discussed** | • Sarah will dive into the CloudSync platform to demo the mobile‑to‑office sync and real‑time dashboard. |\n| **Take‑away** | BuildRight’s fragmented tools create costly communication lags; CloudSync’s mobile‑first, real‑time sync offers a clear, immediate benefit to reduce delays and associated costs."
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Set - Mock Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Remove Timestamps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Remove Timestamps": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Split Lines to Items": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SplitInBatches": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code - Split Lines to Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set - Mock Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "379a5e5d-c0c5-40a4-ae78-2ea2b3f8c740",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "877aee74a0a2e2e56c282a106f79c1ef3407946268c6f44dcd0f791b51816276"
+  },
+  "id": "bb4WwDa3HARRh-9kp9652",
+  "tags": []
+}

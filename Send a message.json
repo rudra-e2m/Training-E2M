@@ -1,0 +1,214 @@
+{
+  "name": "Send a message",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        -416
+      ],
+      "id": "173aede0-ae60-47c0-a961-d0d127e4644e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "[\n\n  { \"name\": \"Item A\", \"qty\": \"1\" },\n\n  { \"name\": \"Item B\", \"qty\": \"2\" },\n\n  { \"name\": \"Item C\", \"qty\": \"3\" },\n\n  { \"name\": \"Item D\", \"qty\": \"4\" },\n\n  { \"name\": \"Item E\", \"qty\": \"5\" }\n\n]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -464,
+        -416
+      ],
+      "id": "606eba39-89b8-4078-b2c4-a9d8bc1f1300",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -416
+      ],
+      "id": "bd9622f4-762b-46ba-9a5d-598e4336bf29",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "sendTo": "mohit.pillai@e2m.solutions",
+        "subject": "Training day 3",
+        "emailType": "text",
+        "message": "={{ $json.data.map(item => `${item.name}: ${item.qty}`).join('\\n') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        -624
+      ],
+      "id": "06ecdff3-8a41-4313-ba02-013211a8bb61",
+      "name": "Send a message",
+      "webhookId": "7ff86d0e-cb9e-4606-b5fb-71c7b2ba1492",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "hzv3BXv5lnYmpMH6",
+          "name": "Rudra's gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0ABU9WPRH7",
+          "mode": "id"
+        },
+        "text": "={{ $json.data.map(item => `${item.name}: ${item.qty}`).join('\\n') }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        80,
+        -432
+      ],
+      "id": "8bb34968-b99e-4465-9975-6f3191fb9b58",
+      "name": "Send a message1",
+      "webhookId": "00de930c-cf35-4972-8550-6286049f6f9b",
+      "credentials": {
+        "slackApi": {
+          "id": "mKao5ONa2odcvCrm",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "rudra.joshi@e2m.solutions",
+        "toEmail": "mohit.pillai@e2m.solutions",
+        "subject": "Training email send",
+        "emailFormat": "text",
+        "text": "={{ $json.data.map(item => `${item.name}: ${item.qty}`).join('\\n') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        -224
+      ],
+      "id": "b5690f38-d284-4655-bf3b-901f62792299",
+      "name": "Send email",
+      "webhookId": "8e5e6bb8-7fd6-408d-9d11-e410f6383578",
+      "credentials": {
+        "smtp": {
+          "id": "NkPM9obzVlfi9WPJ",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Edit Fields": [
+      {
+        "json": {
+          "name": "Item A",
+          "qty": "1"
+        }
+      },
+      {
+        "json": {
+          "name": "Item B",
+          "qty": "2"
+        }
+      },
+      {
+        "json": {
+          "name": "Item C",
+          "qty": "3"
+        }
+      },
+      {
+        "json": {
+          "name": "Item D",
+          "qty": "4"
+        }
+      },
+      {
+        "json": {
+          "name": "Item E",
+          "qty": "5"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b271fd8a-7697-4e8d-a9f2-ba364acf15ea",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "877aee74a0a2e2e56c282a106f79c1ef3407946268c6f44dcd0f791b51816276"
+  },
+  "id": "44SxN23ibjsZrqAs2z3Qv",
+  "tags": []
+}
