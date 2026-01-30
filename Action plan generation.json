@@ -1,0 +1,732 @@
+{
+  "name": "Action plan generation",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "b858829e-27e5-486b-a29c-8640e1601cc3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -528,
+        16
+      ],
+      "id": "f9d02dca-8fd1-427d-8680-24dbea2a4994",
+      "name": "Webhook",
+      "webhookId": "b858829e-27e5-486b-a29c-8640e1601cc3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://14.194.54.150:8000/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  \"model\": \"meta-llama/Llama-3.2-3B-Instruct\",\n  \"stream\": false,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": `### INPUT DATA\n**Task Name:** ${$json.task_name}\n\n**Original Description:** ${$json.description}\n\n**Comment History:**\n${$json.comments}\n\n### INSTRUCTIONS\nAnalyze the input above and generate a Structured Technical Summary.\n\n**Phase 1: Analysis**\n- Check if the comments contradict the task name.\n- Check if the comments contain a \"Done\" confirmation or a \"Blocker\".\n- Identify if there are missing requirements.\n\n**Phase 2: Output Generation**\nProvide the output in the following format:\n\n**SUMMARY:** [A 2-sentence technical summary.]\n**STATUS:** [OPEN / IN_PROGRESS / BLOCKED / READY_FOR_QA / COMPLETED]\n**LATEST CONTEXT:** [Summarize the most recent relevant comment.]\n**KEY ASSETS:** [List any URLs, Credentials, or File Paths.]`\n    }\n  ]\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        16
+      ],
+      "id": "d78a41e5-1065-4d51-b093-ac5600b4ae60",
+      "name": "LLAMA"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This loops through each of the 8 tasks (items) received from the Webhook\nreturn items.map(item => {\n  const task = item.json;\n  \n  return {\n    json: {\n      task_name: task.task_name,\n      description: task.description,\n      // This merges all comments in the array into one string, \n      // separated by a new line and a bullet point.\n      comments: Array.isArray(task.comments) \n        ? task.comments.map(c => `- ${c}`).join('\\n') \n        : task.comments\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "75a21ed2-fd71-4c8a-ad81-31cb220a727e",
+      "name": "Formatting response"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1sNdNV1wX5g4fDFrxF-pIxx-WKJZCX5iZDjIJCkInIuo",
+          "mode": "list",
+          "cachedResultName": "Action PLan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sNdNV1wX5g4fDFrxF-pIxx-WKJZCX5iZDjIJCkInIuo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sNdNV1wX5g4fDFrxF-pIxx-WKJZCX5iZDjIJCkInIuo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Action plan ": "={{ $json.output }}",
+            "Task name ": "={{ $('Formatting response').item.json.task_name }}",
+            "Description ": "={{ $('Formatting response').item.json.description }}"
+          },
+          "matchingColumns": [
+            "output"
+          ],
+          "schema": [
+            {
+              "id": "Task name ",
+              "displayName": "Task name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Action plan ",
+              "displayName": "Action plan ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        16
+      ],
+      "id": "0377fd16-e20b-4902-9921-f10400b6301b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ANty4YYfjuiwMaY3",
+          "name": "rudra's sheets TRAINING"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "mistralai/mistral-7b-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        112,
+        224
+      ],
+      "id": "60a4b5cf-ae4b-444f-af36-c216d915aba8",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "jcyQsnqtpssKl31n",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### SOURCE SUMMARY \n{{ $json.choices[0].message.content }}\n\n### INSTRUCTIONS\nBased on the summary provided above, generate a professional Technical Action Plan. \n\n### FINAL OUTPUT REQUIREMENT\nDeliver the plan in clean, professional steps.",
+        "options": {
+          "systemMessage": "You are an expert Technical Lead and Systems Architect. Your task is to take a \"State of the Task\" summary and transform it into a professional Action Plan.  "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        192,
+        16
+      ],
+      "id": "23582533-247b-4783-90ff-c46bfe4d956d",
+      "name": "AI Agent"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "task_name": "Investigate Server Resource Usage & Rate-Limit Issue [Panama Equity]",
+          "description": "The website is consuming higher-than-normal resources, or there may have been a sudden spike in traffic. To investigate this further from the resource-usage perspective",
+          "comments": [
+            "The client did report an issue yesterday with the website also not translating their listings anymore?, For this task, the site has gone down twice in the last two days, so we need to check why this is happening.",
+            "Pls add some details to the task regarding the requirement",
+            "Hi Please take care of this task. Thank you!"
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "Add Images To Post",
+          "description": "Nelson Exteriors--- https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta Blog: The Ultimate Guide to Deck Installation, Repair & Rebuilding in Metro Atlanta Please add the images inside the content document to the published page. The client placed images where they should be added to the blog. I have left the comments where they have placed the images unresolved, so you can easily identify those.",
+          "comments": [
+            "We have added images as per the client's comment on the post. URL: https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta Please review it and let us know if any other changes are needed. Thank you!",
+            "Hello Please validate the image location is as per clients's doc initiate QA for this blog. URL: https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta",
+            "I have verified the images in the blog post . It's perfectly aligned with the client requirement. URL: https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta Screenshot : https://www.dropbox.com/scl/fi/6tie2p62rd8zu59uj6pcp/Full-screen-December-09-2025-14-55-57.mp4?rlkey=e83rostxqyt8l0m19akgbl50v&dl=0 Let me know if you have any questions or concerns",
+            "We have added images as per the client's comment on the post. URL: https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta Please review it and let us know if any other changes are needed. Thank you! Notes: We have followed SOP for image implementation, added an alt tag, and adjusted the image ratio to 500x500px as per SOP."
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "Website Update - Happy Tails",
+          "description": "https://happytails.tips/wp-admin Username: test The need here is to cleanup the site for easier updates in the future. It is built in Elementor but we need a consistent header/nav and footer across the site, with a copyright date in the footer that updates dynamically each year. Also, favicon should be updated. Please follow this wireframe to build the homepage and for the header and footer: https://docs.google.com/drawings/d/1ZGVrLyTSUYONCdJxBNHLzA3dfNq7QvJyZtS0AJQMRLI/edit?usp=sharing NOTE: the hero image of the 3 animals should STAY, don't swap that out All logo variations are attached, as are images that may be needed. You do NOT need to build out any interior pages beyond just getting the header and footer set up properly.",
+          "comments": [
+            "Hi We have started working on the landing page as per the provided instructions. We have created the header and footer according to the mockup, and for now, they are visible only on the landing page. We have also started working on the landing page sections as per the wireframe. You can review it here: https://happytails.tips/landing/ We will continue working on the remaining parts of the landing page. Please check and let me know if you have any questions.",
+            "Hello We have completed the below sections with responsiveness on the landing page as per the provided instructions: We Know How: https://prnt.sc/hliuRd5nj76r Popular Solutions: https://prnt.sc/mBZhiO3MrN5v Restore Your Pet's Balance: https://prnt.sc/m-b-Nx6O0CsB URL: https://happytails.tips/landing/ #Note: Could you please provide this image? https://prnt.sc/NYrLZXrgSX3n Right now, we have added a relevant image. Working on Natural Healing section. https://prnt.sc/Ltu2-ZpMP3uW Thank You!",
+            "Support Hello We have completed the Natural Healing section with responsive. screenshot: https://prnt.sc/JK7OViWyhX4g also we have completed the Download Our Free Guide section, except for the form. screenshot: https://prnt.sc/3-SKCs0zJy0x Note: The site uses a form script, please confirm whether we should add that script or create the form using a plugin. We have also checked the responsive design. The landing page is now completed with responsiveness, except for the form section. screenshot: https://prnt.sc/jcCq-0-fln_Z URL: https://happytails.tips/landing/"
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "Configure products and optimize the checkout process to improve user experience and conversions",
+          "description": "Create and configure 10 simple and variable products in WooCommerce. Set product categories, tags, pricing, SKU, and inventory management. Configure shipping zones, shipping methods, and tax settings. Enable and test payment gateways (Stripe/PayPal/CODS).",
+          "comments": [
+            "configuration of woocommerce done.",
+            "product categories created",
+            "Client want stripe payment gateway to integrate in website.",
+            "make sure all the api key keep in safe"
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "Upside Therapy Website",
+          "description": "PMS - https://3.basecamp.com/5970095/buckets/44366160/todolists/9210554592 =============================== Project Brief - https://docs.google.com/document/d/13IaJpANJbkx43UB2r21yN2L3rnB9myuiTbyFMDKO-Is/edit?tab=t.prl7gm2b8k04 We are doing a new website for: https://upsidetherapy.com/ This will be on an entirely new Wordpress, prefer to design it with Elementor. Location information, phone number can be found on their site. =============================== Loom Video - https://www.loom.com/share/1b0f05011dd041cf82d88fef5a57163d?sid=d79e59ca-3691-4daf-a755-d3cbde1bd6fe =============================== Folder - https://drive.google.com/drive/folders/17QiRZ1cieMmPZ-wqoZRcUMxCauOtEn1m?usp=sharing",
+          "comments": [
+            "Will start"
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "VSS add common footer in stage",
+          "description": "login url: https://stg-bgvsstudios-staging.kinsta.cloud/wp-admin/ user: test @devteam We need your help to add another section to the bottom of the footer. I have attached a .pdf mockup of how this should look. Requirements: Font: Brother-1816 Background color: #1F2A4A The logo needs to link to https://clubworks.com/ Each company name needs to be a link in the order listed below Do not include Visionary Spectacle Studios on this site Links: Peacock + Lewis: https://peacockandlewis.com/ JBD JGA: https://www.jbd-jga.com/ GGA: https://ggapartners.com/ Private Club Films: https://www.privateclubfilms.com/ Clubworks Engineering: https://clubworks.com/partner-firms/clubworks-engineering/ Buffalo Groupe: https://buffalogroupe.com/ KDC: https://kdcarchitects.com/ Please let me know if you have any questions, or if any issues arise.",
+          "comments": [
+            "Will integrate it."
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "Homepage Hero Section Implementation",
+          "description": "Design and implement the homepage hero section featuring a full-width banner with a background image slider, headline text, subheading, and two call-to-action buttons linking to Services and Contact pages. Ensure the section is optimized for fast loading and adapts properly across desktop, tablet, and mobile devices.",
+          "comments": [
+            "We will keep colour code same like in existing theme"
+          ]
+        }
+      },
+      {
+        "json": {
+          "task_name": "Mobile Responsiveness Fixes",
+          "description": "Review all major pages on mobile and tablet devices to fix layout issues such as overlapping elements, font scaling problems, misaligned buttons, and broken grids. Ensure touch-friendly spacing and consistent UI across screen sizes.",
+          "comments": [
+            "We will first complete in android device once its complete then start ios device responsive."
+          ]
+        }
+      }
+    ],
+    "LLAMA": [
+      {
+        "json": {
+          "id": "chatcmpl-89b2458d218a092d",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**Structured Technical Summary**\n\n**SUMMARY:** The task involves investigating server resource usage and rate-limit issues for the Panama Equity website, which has experienced two recent downtime incidents. The goal is to analyze resource usage and identify the root cause of the issues.\n\n**STATUS:** IN_PROGRESS\n\n**LATEST CONTEXT:** The site has gone down twice in the last two days, and the client reported an issue yesterday with the website not translating listings anymore.\n\n**KEY ASSETS:**\n\n- Task Description: Original description of the task, including the task name, comments history, and original description.\n- Comments History: Comments related to the task, including client reports and confirmation of the task.\n- Requirement: Missing requirement details regarding the specific requirements for the investigation.",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 308,
+            "total_tokens": 458,
+            "completion_tokens": 150,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-b3c6b2cb7e35c345",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**SUMMARY:** The task involves adding images to a blog post titled \"The Ultimate Guide to Deck Installation, Repair & Rebuilding in Metro Atlanta\" as per the client's requirements. The comments from the team members confirm that the images have been added and reviewed, but there is no mention of any changes or issues.\n\n**STATUS:** READY_FOR_QA\n\n**LATEST CONTEXT:** The team members have added images as per the client's comment on the post, and the blog post has been reviewed. The most recent comment from the team leader confirms that the images are aligned with the client's requirement and that there are no further changes needed.\n\n**KEY ASSETS:**\n\n- Blog post URL: https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta\n- Comment history URLs:\n  - https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta\n  - https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta\n  - https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta\n  - https://www.dropbox.com/scl/fi/6tie2p62rd8zu59uj6pcp/Full-screen-December-09-2025-14-55-57.mp4?rlkey=e83rostxqyt8l0m19akgbl50v&dl=0",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 586,
+            "total_tokens": 889,
+            "completion_tokens": 303,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-b27f9fd40ecfd0f4",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**SUMMARY:** The task involves updating the Happy Tails website with a consistent header, footer, and copyright date across the site, as well as updating the favicon. The website is built using Elementor and requires a responsive design.\n\n**STATUS:** IN_PROGRESS\n\n**LATEST CONTEXT:** The developers have completed the landing page sections with responsiveness and have started working on the Natural Healing section. They have also completed the Download Our Free Guide section, except for the form.\n\n**KEY ASSETS:**\n\n- Website URL: https://happytails.tips\n- Wireframe: https://docs.google.com/drawings/d/1ZGVrLyTSUYONCdJxBNHLzA3dfNq7QvJyZtS0AJQMRLI/edit?usp=sharing\n- Hero Image: The hero image of the 3 animals should stay.\n- Logo Variations: Attached.\n- Images: Attached.\n- Form Script: The site uses a form script, but its implementation is pending.",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 763,
+            "total_tokens": 971,
+            "completion_tokens": 208,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-a4ca9a869023b3fa",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**SUMMARY:** The task involves configuring WooCommerce with product categories, tags, pricing, and inventory management, while also integrating Stripe as the payment gateway. The goal is to improve user experience and conversions.\n\n**STATUS:** IN_PROGRESS\n\n**LATEST CONTEXT:** The configuration of WooCommerce is complete, and product categories have been created. However, the client has requested the integration of Stripe as the payment gateway, which needs to be implemented.\n\n**KEY ASSETS:**\n\n- WooCommerce configuration files\n- Product categories and tags\n- Stripe API key (safe and secure storage)\n- Payment gateway integration code (to be written)\n\nNote: The task is not yet completed as the integration of Stripe as the payment gateway is still pending.",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 293,
+            "total_tokens": 438,
+            "completion_tokens": 145,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-b10828a6f96e67c1",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "### Structured Technical Summary\n\n**SUMMARY:** The task involves designing a new website for Upside Therapy using WordPress with Elementor, incorporating location information and a phone number. The project involves analyzing existing data and requirements from various sources.\n\n**STATUS:** IN_PROGRESS\n\n**LATEST CONTEXT:** The project is currently underway, with the analysis phase completed. The most recent relevant comment is \"Will start,\" indicating the beginning of the project.\n\n**KEY ASSETS:**\n\n* Project Brief: https://docs.google.com/document/d/13IaJpANJbkx43UB2r21yN2L3rnB9myuiTbyFMDKO-Is/edit?tab=t.prl\n* Original Description: https://3.basecamp.com/5970095/buckets/44366160/todolists/9210554592\n* Loom Video: https://www.loom.com/share/1b0f05011dd041cf82d88fef5a57163d?sid=d79e59ca-3691-4daf-a755-d3cbde1bd6fe\n* Folder: https://drive.google.com/drive/folders/17QiRZ1cieMmPZ-wqoZRcUMxCauOtEn1m?usp=sharing",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 428,
+            "total_tokens": 696,
+            "completion_tokens": 268,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-a7bd0ee1dae3d271",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**Structured Technical Summary**\n\n**SUMMARY:** The task involves integrating a common footer with additional company information into a WordPress site, as specified in the provided input data. The footer will include a logo linking to clubworks.com, company names with links to their respective websites, and a background color of #1F2A4A.\n\n**STATUS:** IN_PROGRESS\n\n**LATEST CONTEXT:** The original description outlines the requirements for the footer, including font, background color, logo, and company information.\n\n**KEY ASSETS:**\n\n- Input data: [Original Description, Comment History]\n- Mockup PDF: [Attached PDF]\n- Required URLs and links:\n  - https://clubworks.com/\n  - https://peacockandlewis.com/\n  - https://www.jbd-jga.com/\n  - https://ggapartners.com/\n  - https://www.privateclubfilms.com/\n  - https://clubworks.com/partner-firms/clubworks-engineering/\n  - https://buffalogroupe.com/\n  - https://kdcarchitects.com/",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 425,
+            "total_tokens": 644,
+            "completion_tokens": 219,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-be627a461bfc3704",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**SUMMARY:** The task involves designing and implementing a homepage hero section with a full-width banner, background image slider, headline text, subheading, and call-to-action buttons. The section must be optimized for fast loading and adapt across desktop, tablet, and mobile devices while maintaining the existing color scheme.\n\n**STATUS:** IN_PROGRESS\n\n**LATEST CONTEXT:** The task description outlines the requirements for the homepage hero section, including the use of a background image slider, headline text, subheading, and call-to-action buttons. The section must be optimized for fast loading and adapt across different devices.\n\n**KEY ASSETS:**\n\n- Existing theme color scheme (no specific color codes provided)\n- Task name: Homepage Hero Section Implementation\n- Original description: Design and implement the homepage hero section\n- Comment history: \n  - We will keep colour code same like in existing theme",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 268,
+            "total_tokens": 444,
+            "completion_tokens": 176,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "id": "chatcmpl-bb49b86785d488fe",
+          "object": "chat.completion",
+          "created": 1769769424,
+          "model": "meta-llama/Llama-3.2-3B-Instruct",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "**Structured Technical Summary**\n\n**SUMMARY:** The task involves reviewing all major pages on mobile and tablet devices to fix layout issues and ensure touch-friendly spacing and consistent UI across screen sizes. This analysis aims to identify any potential issues or missing requirements for the task.\n\n**STATUS:** OPEN\n\n**LATEST CONTEXT:** The original description outlines the task requirements, including reviewing major pages on mobile and tablet devices to fix layout issues and ensure mobile responsiveness. No \"Done\" confirmation or \"Blocker\" comments are present in the provided comment history.\n\n**KEY ASSETS:**\n\n- Task Name: Mobile Responsiveness Fixes\n- Original Description: Review all major pages on mobile and tablet devices to fix layout issues such as overlapping elements, font scaling problems, misaligned buttons, and broken grids.\n- Comment History: [Provided in the original description]",
+                "refusal": null,
+                "annotations": null,
+                "audio": null,
+                "function_call": null,
+                "tool_calls": [],
+                "reasoning": null,
+                "reasoning_content": null
+              },
+              "logprobs": null,
+              "finish_reason": "stop",
+              "stop_reason": null,
+              "token_ids": null
+            }
+          ],
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": {
+            "prompt_tokens": 256,
+            "total_tokens": 425,
+            "completion_tokens": 169,
+            "prompt_tokens_details": null
+          },
+          "prompt_logprobs": null,
+          "prompt_token_ids": null,
+          "kv_transfer_params": null
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      }
+    ],
+    "AI Agent": [
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: Panama Equity Server Resource & Rate-Limit Investigation**\n\n## **1. IMMEDIATE PREREQUISITES**\n### **1.1. Mandatory Backup & Staging Environment**\n- **Backup Critical Systems**:\n  - **Database**: Generate a full backup of the WordPress MySQL database via **`wp db backup`** (WP-CLI) or **phpMyAdmin** (if available).\n  - **File System**: Export a complete backup of the `/var/www/html/` directory (or equivalent) using **`tar -czvf panama_equity_backup_$(date +%Y%m%d).tar.gz /var/www/html/`** (Linux) or **`zip -r panama_equity_backup_$(date +%Y%m%d).zip /var/www/html/`** (Windows).\n  - **Server Configuration**: Backup **Nginx** (`/etc/nginx/`) and **PHP-FPM** (`/etc/php/`) configurations.\n  - **WooCommerce/Payment Gateways**: Verify no pending transactions or orders are in a failed state. Check **WooCommerce > Status > Logs** for errors.\n\n- **Staging Environment Validation**:\n  - Confirm a **staging replica** of the live site exists (e.g., `staging.panamaequity.com`).\n  - If staging is unavailable, **isolate the live environment** by:\n    - Placing the site in **maintenance mode** via **`wp maintenance-mode enable`** (WP-CLI) or **Elementor > Site Settings**.\n    - Disabling **WooCommerce** and **payment gateways** temporarily (if safe) via **`wp plugin deactivate woocommerce`** (WP-CLI) or **WooCommerce > Settings > Advanced**.\n  - **Access Requirements**:\n    - SSH access to the server with **`sudo`** privileges.\n    - **Cloudflare** (if used) API keys or dashboard access for rate-limit inspection.\n    - **New Relic**/**Datadog**/**AWS CloudWatch** (or equivalent) credentials for server metrics analysis.\n    - **WP-Admin** access with **`administrator`** role.\n    - **FTP/SFTP** credentials for file-level inspection.\n\n### **1.2. Environment Setup**\n- **Replicate Downtime Conditions**:\n  - Identify the **exact timestamps** of the downtime incidents from **server logs** (`/var/log/nginx/error.log`, `/var/log/nginx/access.log`, `/var/log/php-fpm.log`).\n  - Check **`top`**, **`htop`**, or **`glances`** (Linux) for peak CPU/memory usage during incidents.\n  - Review **`journalctl -u nginx --no-pager`** (Linux) for Nginx crashes or timeouts.\n- **Isolate Affected Components**:\n  - Disable **Elementor Pro** (if active) via **`wp plugin deactivate elementor-pro`** (WP-CLI) to rule out frontend-related resource spikes.\n  - Check **`wp cron event list`** (WP-CLI) for scheduled tasks that may coincide with downtime (e.g., **WooCommerce** syncs, **WPML** translations).\n  - Verify **`wp plugin list`** for resource-heavy plugins (e.g., **Revolution Slider**, **LayerSlider**, **WPML**, **Yoast SEO**, **WP Rocket**).\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **2.1. Server-Level Resource Analysis**\n- **Inspect Nginx & PHP-FPM**:\n  - Run **`nginx -t`** to validate configuration syntax.\n  - Check **`/etc/nginx/nginx.conf`** and **`/etc/nginx/sites-available/panama_equity.conf`** (or equivalent) for:\n    - **Worker processes** (`worker_connections`): Ensure alignment with server CPU cores (e.g., `worker_processes 4;` for 4 cores).\n    - **Buffer sizes** (`fastcgi_buffer_size`, `proxy_buffer_size`): Increase if logs show `413 Request Entity Too Large` or `504 Gateway Timeout`.\n    - **Rate-limiting directives** (e.g., `limit_req_zone`, `limit_conn_zone`): Review and adjust if misconfigured.\n  - Analyze **PHP-FPM** pool settings (`/etc/php/8.x/fpm/pool.d/www.conf` or equivalent):\n    - **`pm.max_children`**: Ensure it’s set to **`2 * $cpu_cores + 1`** (e.g., `8` for a 4-core server).\n    - **`pm.start_servers`**, **`pm.min_spare_servers`**, **`pm.max_spare_servers`**: Validate against current traffic patterns.\n    - **`request_terminate_timeout`**: Increase from default `120s` to `300s` if slow requests are logged.\n  - **Check for Abnormal Loads**:\n    - Use **`netstat -tulnp`** (Linux) to identify open connections or ports under heavy load.\n    - Run **`ss -s`** to verify TCP/IP connection counts (e.g., `ESTAB` spikes).\n    - Inspect **`/var/log/auth.log`** for brute-force or DDoS attempts (e.g., `fail2ban` logs).\n\n- **Review Cloudflare (If Applicable)**:\n  - Navigate to **Cloudflare Dashboard > Security > Rate Limiting** and check for:\n    - **Firewall Rules** triggering blocks (e.g., `10000 requests per 1s`).\n    - **WAF Rules** causing false positives (e.g., `HTTP::Body` parsing delays).\n  - Temporarily **disable rate-limiting** to test if downtime recurs.\n  - Check **`Cloudflare Analytics > Traffic`** for sudden spikes in requests (e.g., **`HTTP Requests`**, **`Bandwidth`**).\n\n### **2.2. Application-Level Bottleneck Identification**\n- **WooCommerce & WPML Deep Dive**:\n  - **WooCommerce**:\n    - Run **`wp wc status`** (WP-CLI) to check for pending updates or conflicts.\n    - Enable **`WP_DEBUG`** and **`WP_DEBUG_LOG`** in `wp-config.php` to capture PHP errors during listing loads.\n    - Check **`WooCommerce > Settings > Advanced > Log Level`** for **`debug`** mode.\n    - Review **`/wp-content/uploads/woocommerce_uploads/`** for large files (e.g., **`product_images`**, **`variation_images`**) causing upload delays.\n    - Validate **`shipping zone`** and **`tax rate`** calculations via **`WooCommerce > Status > Tools > Logs`** for slow queries.\n  - **WPML (WordPress Multilingual Plugin)**:\n    - Run **`wpml-st-status`** (WP-CLI) to check for **`string translation`** or **`post translation`** sync issues.\n    - Inspect **`WPML > Settings > Multilingual Content > Translation Management`** for **`automatic`** sync conflicts.\n    - Check **`WPML > Support > Troubleshooting`** for **`database cleanup`** recommendations.\n    - Review **`wpml_translation`** table size via **`phpMyAdmin`** or **`wp db query \"SELECT COUNT(*) FROM wpml_translation;\"`** (WP-CLI).\n\n- **Elementor & Frontend Optimization**:\n  - Disable **`Elementor > Experiments > Dynamic CSS`** to rule out CSS generation delays.\n  - Clear **`Elementor > Site Settings > Performance > CSS Cache`** and **`JS Cache`**.\n  - Check **`Elementor > System Info`** for **`PHP memory limit`** recommendations (e.g., increase from `256M` to `512M`).\n  - Review **`Elementor > Page Builder > Settings > Performance`** for:\n    - **`Load More`** (Lazy Load) settings.\n    - **`Archive Filtering`** (if listings are paginated).\n  - Audit **`Elementor > Theme Builder > Header/Footer`** for heavy scripts (e.g., **`custom JS`**, **`third-party integrations`**).\n\n### **2.3. Database & Query Optimization**\n- **Slow Query Analysis**:\n  - Run **`wp db query \"SHOW FULL PROCESSLIST;\"`** (WP-CLI) during peak hours to identify long-running queries.\n  - Check **`wp-config.php`** for **`WP_DEBUG`** and **`WP_DEBUG_LOG`** (set to `true`).\n  - Review **`/wp-content/debug.log`** for **`MySQL`** query timeouts (e.g., **`SQLSTATE[HY000]: General error: 2006 MySQL server has gone away`**).\n  - Optimize **`wp_options`** table via **`wp db optimize`** (WP-CLI) or **`phpMyAdmin > Optimize Table`**.\n  - Run **`wp db repair`** (WP-CLI) if corruption is suspected.\n\n- **WooCommerce Database Fixes**:\n  - Rebuild **`WooCommerce`** indexes via **`WooCommerce > Status > Tools > Run Indexer`**.\n  - Check **`wp_woocommerce_sessions`** table for stale entries (e.g., **`DELETE FROM wp_woocommerce_sessions WHERE session_expiry < NOW();`**).\n  - Validate **`wp_woocommerce_order_items`**, **`wp_woocommerce_order_itemmeta`**, and **`wp_woocommerce_tax_rates`** for bloated data.\n\n### **2.4. Rate-Limit & API Throttling Review**\n- **Payment Gateway APIs**:\n  - Test **`WooCommerce > Settings > Payments`** for each gateway (e.g., **`Stripe`**, **`PayPal`**, **`Mercado Pago`**):\n    - Simulate **`100 concurrent transactions`** via **`WP REST API`** (e.g., **`/wp-json/wc/v3/orders`**) to check for **`429 Too Many Requests`**.\n    - Review **`WooCommerce > Status > Logs`** for **`API timeout`** or **`rate-limit exceeded`** errors.\n    - Adjust **`API request limits`** in gateway settings (e.g., **`Stripe > Webhooks > Rate Limit`**).\n  - If **`Mercado Pago`** is used, check **`MP > Settings > API > Request Throttling`** and increase limits.\n\n- **Third-Party API Integrations**:\n  - Audit **`WPML > Settings > Connected Sites`** for external API calls (e.g., **`Google Maps`**, **`translation services`**).\n  - Inspect **`Elementor > Page Builder > Settings > Custom Code`** for **`fetch()`** or **`axios`** calls to external APIs.\n  - Review **`/wp-content/plugins/`** for plugins with **`API rate-limit`** issues (e.g., **`Advanced Custom Fields`**, **`Gravity Forms`**).\n\n### **2.5. Configuration & Performance Tuning**\n- **Nginx Performance Adjustments**:\n  - Modify **`/etc/nginx/nginx.conf`** to include:\n    ```nginx\n    http {\n      limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;\n      limit_conn_zone $binary_remote_addr zone=conn_limit:10m;\n\n      server {\n        location /wp-json/ {\n          limit_req zone=api_limit burst=20 nodelay;\n          limit_conn conn_limit 10;\n        }\n      }\n    }\n    ```\n  - Test changes with **`nginx -t`** and reload via **`systemctl reload nginx`**.\n\n- **PHP-FPM & OpCache**:\n  - Update **`/etc/php/8.x/fpm/php.ini`** (adjust version as needed):\n    ```ini\n    opcache.enable=1\n    opcache.memory_consumption=256\n    opcache.interned_strings_buffer=128\n    opcache.max_accelerated_files=4000\n    opcache.revalidate_freq=60\n    opcache.fast_shutdown=1\n    ```\n  - Restart PHP-FPM: **`systemctl restart php8.x-fpm`**.\n\n- **WooCommerce & WPML Settings**:\n  - **WooCommerce**:\n    - Set **`WooCommerce > Settings > Advanced > Force SSL`** to **`false`** (if mixed content is causing delays).\n    - Disable **`WooCommerce > Settings > Shipping > Shipping Calculations > Shipping Class`** if unused.\n  - **WPML**:\n    - Reduce **`WPML > Settings > Multilingual Content > Translation Management > Automatic`** sync frequency to **`hourly`**.\n    - Enable **`WPML > Settings > Multilingual Content > Translation Management > Cleanup`**.\n\n- **Database-Level Optimizations**:\n  - Increase **`MySQL`** **`innodb_buffer_pool_size`** to **`50% of available RAM`** (e.g., `4G` for 8GB server).\n  - Adjust **`wp-config.php`** for **`define('WP_MEMORY_LIMIT', '512M');`** and **`define('WP_MAX_MEMORY_LIMIT', '1024M');`**.\n\n---\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **3.1. Pre-Deployment Validation**\n| **Test**                          | **Tool/Method**                          | **Expected Result**                          |\n|------------------------------------|------------------------------------------|---------------------------------------------|\n| Nginx config syntax check          | `nginx -t`                               | No syntax errors (`test is successful`).       |\n| PHP-FPM pool settings validation   | `php -i \\| grep pm`                      | `pm.max_children` aligned with CPU cores.     |\n| Database query performance           | `wp db query \"SHOW FULL PROCESSLIST;\"`   | No queries > `5s` execution time.            |\n| WooCommerce API rate limits          | Postman/REST API testing                  | No `429` errors with 100 concurrent requests.|\n| WPML translation sync status       | `wpml-st-status` (WP-CLI)                | All translations marked as **`complete`**.     |\n| Elementor frontend rendering        | Chrome DevTools (Lighthouse)              | **`Performance Score > 90`** (no critical delays). |\n\n### **3.2. Post-Deployment Verification**\n| **Test**                          | **Tool/Method**                          | **Expected Result**                          |\n|------------------------------------|------------------------------------------|---------------------------------------------|\n| Server uptime monitoring            | `uptime` (Linux) or **Datadog Dashboard**| No crashes for **`24h`** post-adjustments.     |\n| Nginx/PHP-FPM resource usage       | `htop`/`glances`                         | CPU < `70%`, Memory < `80%` under load.     |\n| WooCommerce listing translations     | Manual test (switch languages)             | Listings load within **`2s`** (no timeouts). |\n| Payment gateway transaction flow     | WooCommerce > Test Orders                 | **`100 test orders`** processed without errors.|\n| Cloudflare rate-limiting (if re-enabled)| Cloudflare Dashboard > Security > WAF       | No sudden request drops or `429` errors.      |\n| Database integrity                 | `wp db check` (WP-CLI)                  | **`No errors`** reported.                    |\n\n### **3.3. Regression Testing**\n- **Automated Tests**:\n  - Run **`wp-cron`** tests via **`wp cron test`** (WP-CLI).\n  - Validate **`WooCommerce`** hooks with **`Hookr`** plugin (no conflicts).\n- **Manual Tests**:\n  - Load **`high-traffic pages`** (e.g., **`/products/`**, **`/cart/`**) with **`100 concurrent users`** (via **`Locust`** or **`k6`**).\n  - Check **`mixed-language listings`** for consistency (e.g., **`/products/?lang=es`**).\n  - Verify **`payment gateway webhooks`** are processing (e.g., **`Stripe > Webhooks > Test`**).\n\n---\n## **4. POTENTIAL PITFALLS**\n### **4.1. Database Locking During Optimization**\n- **Risk**: Running **`REPAIR TABLE`** or **`OPTIMIZE TABLE`** on large WooCommerce/WPML tables may cause **`MySQL`** locks, leading to **`500 Internal Server Error`** for live users.\n- **Mitigation**:\n  - Schedule optimizations during **`low-traffic hours`** (e.g., **`3 AM UTC`**).\n  - Use **`wp db optimize --run-on-schedule`** (WP-CLI) for gradual execution.\n  - Monitor **`InnoDB`** locks via **`SHOW ENGINE INNODB STATUS;`** (WP-CLI).\n\n### **4.2. Cloudflare Rate-Limiting Misconfiguration**\n- **Risk**: Overly aggressive **`Cloudflare`** **`rate-limiting`** rules may block legitimate traffic (e.g., **`WooCommerce`** AJAX calls, **`WPML`** syncs).\n- **Mitigation**:\n  - Whitelist **`WooCommerce`** and **`WPML`** IPs in **`Cloudflare > Firewall > IP Access Rules`**.\n  - Exclude **`/wp-json/`** and **`/wp-admin/admin-ajax.php`** from rate-limiting via **`Page Rules`**.\n  - Test with **`curl`** before re-enabling:\n    ```bash\n    curl -v -H \"CF-Ray: ^[0-9a-f]{20}\" https://panamaequity.com/wp-json/wc/v3/products\n    ```\n\n### **4.3. PHP-FPM Worker Process Starvation**\n- **Risk**: Setting **`pm.max_children`** too high may exhaust server memory, while setting it too low causes **`502 Bad Gateway`** errors under load.\n- **Mitigation**:\n  - Start with **`pm.max_children = 2 * $cpu_cores + 1`** (e.g., `8` for 4 cores).\n  - Use **`pm.process_idle_timeout = 30s`**"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: QA Validation for Blog Post Image Integration**\n**Blog Post Title:** *\"The Ultimate Guide to Deck Installation, Repair & Rebuilding in Metro Atlanta\"*\n**URL:** [https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta](https://www.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta)\n**Status:** `READY_FOR_QA`\n**Last Reviewed:** December 09, 2025 (per attached video)\n\n---\n\n## **1. IMMEDIATE PREREQUISITES**\n### **Mandatory Backups & Environment Checks**\n- **Staging Environment Validation:**\n  - Confirm the staging site (`https://staging.nelson-exteriors.com/blog/guide-to-deck-installation-atlanta`) mirrors the live environment’s WordPress version (`6.6.x`), theme (`Astra Pro` or equivalent), and plugin configurations (`Elementor`, `WooCommerce`, `Smush`, etc.).\n  - Verify that all image assets (including alt text, captions, and file paths) are identical to the live post. Use **WP Media Library** or **FTP/SFTP** (e.g., FileZilla) to cross-check:\n    - Upload directory: `/wp-content/uploads/[year]/[month]/`\n    - Image dimensions: Ensure no unintended cropping/resizing (e.g., `1200x800px` for featured images, `600x400px` for inline).\n    - File formats: Confirm `.jpg`/`.png` with optimal compression (e.g., Smush settings: `80% quality`, `WebP conversion enabled`).\n\n- **Access Requirements:**\n  - **WordPress Admin:** Full editor access to the post (via `https://www.nelson-exteriors.com/wp-admin`).\n  - **Elementor Pro:** Ensure the post uses Elementor Pro (not Classic Editor) for image alignment/spacing checks.\n  - **Browser DevTools:** Chrome/Firefox/Edge with **Lighthouse** (for performance) and **Network Tab** (to inspect image loading).\n  - **Mobile Testing:** Physical devices or emulators (e.g., Chrome DevTools, BrowserStack) for iOS (Safari) and Android (Chrome).\n\n- **Dependencies:**\n  - **Nelson Exteriors Branding Guidelines:** Reconfirm image alignment (e.g., left-aligned for text-heavy sections, centered for hero images), padding (`20px`), and spacing (`30px` between paragraphs).\n  - **SEO Plugin (Yoast/AIOSEO):** Verify images are optimized for SEO (alt text matches context, file names are descriptive, e.g., `atlanta-deck-installation-step-1.jpg`).\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **Step 1: Visual & Structural Validation**\n- **Inspect Image Placement:**\n  - Open the live post in **Chrome DevTools (Elements Tab)** and validate:\n    - **Elementor Widgets:** Confirm images are embedded via **Elementor’s Image Widget** (not shortcodes or manual HTML).\n    - **Alignment:** Check CSS classes (e.g., `alignleft`, `aligncenter`, `wp-block-image`) or inline styles for consistency with branding guidelines.\n    - **Responsive Behavior:** Use **Lighthouse (Responsive Tab)** to simulate viewport sizes (e.g., `320px`, `768px`, `1024px`). Verify:\n      - No overflow issues (images stay within container bounds).\n      - `max-width: 100%` is applied to all image widgets.\n      - Mobile-specific media queries (e.g., `@media (max-width: 767px)`) adjust padding/margins as needed.\n\n- **Cross-Browser Testing:**\n  - Test in **Firefox (with Astra Pro theme default styles)** and **Safari (iOS)** to ensure:\n    - Font rendering doesn’t disrupt image alignment (e.g., `line-height: 1.5` in post content).\n    - No layout shifts due to differing default spacing (e.g., `margin-bottom: 24px` for paragraphs).\n\n### **Step 2: Performance & Load Optimization**\n- **Image Compression Audit:**\n  - Run **Lighthouse (Performance Tab)** on the live post to identify:\n    - **File Size:** Ensure images are < `200KB` (per Smush recommendations). Flag any exceeding `500KB`.\n    - **Lazy Loading:** Verify `loading=\"lazy\"` is applied to all images (check Elementor settings or `wp-block-image` attributes).\n    - **CDN Delivery:** Confirm images are served via **Cloudflare CDN** (or equivalent) with `CF-Cache-Status: HIT` in Network Tab.\n\n- **Critical Rendering Path Check:**\n  - Use **WebPageTest** ([https://www.webpagetest.org](https://www.webpagetest.org)) to analyze:\n    - **Above-the-Fold Images:** Ensure hero images load within **3 seconds** (TTFB + render time).\n    - **Non-Blocking Resources:** Validate no images block DOM construction (e.g., no inline `<img>` tags without `async`/`defer`).\n    - **Nginx/Server Logs:** Check for `404` errors on image paths (e.g., `/wp-content/uploads/2025/12/atlanta-deck-installation-step-1-500x300.jpg` vs. `/wp-content/uploads/2025/12/atlanta-deck-installation-step-1.jpg`).\n\n### **Step 3: SEO & Accessibility Compliance**\n- **Alt Text & Metadata:**\n  - Audit each image using **Yoast SEO’s Image Tab** or **AIOSEO**:\n    - Alt text must include **primary keyword** (e.g., \"deck installation Atlanta\") + descriptive context (e.g., \"wooden deck framing by Nelson Exteriors\").\n    - File names should avoid `IMG_1234.jpg`; use `atlanta-deck-installation-step-1.jpg`.\n    - Captions (if used) should be **concise** and **keyword-rich** (e.g., \"Step 1: Foundation Preparation for Atlanta Decks\").\n\n- **Structured Data Validation:**\n  - Use **Google’s Rich Results Test** ([https://search.google.com/test/rich-results](https://search.google.com/test/rich-results)) to confirm:\n    - Images are included in `BlogPosting` schema (if applicable).\n    - No missing `image` properties in JSON-LD (e.g., `author`, `datePublished`, `mainEntityOfPage`).\n\n### **Step 4: Client Requirement Cross-Check**\n- **Reconfirm Branding Alignment:**\n  - Compare live post images against the **attached video** (December 09, 2025) and **Dropbox link**:\n    - [https://www.dropbox.com/scl/fi/6tie2p62rd8zu59uj6pcp/Full-screen-December-09-2025-14-55-57.mp4?rlkey=e83rostxqyt8l0m19akgbl50v&dl=0](https://www.dropbox.com/scl/fi/6tie2p62rd8zu59uj6pcp/Full-screen-December-09-2025-14-55-57.mp4?rlkey=e83rostxqyt8l0m19akgbl50v&dl=0)\n  - Key checks:\n    - **Image Order:** Matches the logical sequence in the guide (e.g., installation → repair → rebuilding).\n    - **Visual Hierarchy:** Hero images (e.g., full-width deck) are prioritized over secondary images.\n    - **Consistency:** Same filter/color profile applied across all images (e.g., `Vibrant` or `Natural` in Smush).\n\n### **Step 5: Documentation & Handoff**\n- **Update Jira/Confluence:**\n  - Add a **QA Passed** label to the ticket with:\n    - Screenshots of DevTools validation (e.g., mobile responsiveness, alignment).\n    - Lighthouse/WebPageTest scores (e.g., `95/100` for Performance).\n    - Schema markup confirmation (JSON-LD snippet).\n  - Tag the client in Slack/Teams with:\n    > *\"QA completed for [post title]. All images validated for alignment, performance, and SEO. Live post mirrors staging: [URL]. Lighthouse scores: [X]/100. No issues identified.\"*\n\n---\n```\n\n**Note:** If the post uses a custom theme or non-Elementor image handling (e.g., manual HTML), replace Step 1 references with:\n- **Theme Files:** Inspect `/wp-content/themes/[theme-name]/single.php` or `/template-parts/content-single.php` for image markup.\n- **Custom CSS:** Check `/wp-content/themes/[theme-name]/custom.css` for `@media` overrides."
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: Happy Tails Website Header/Footer/Copyright & Favicon Update**\n**Task Owner:** [Your Name]\n**Last Updated:** [Date]\n**Status:** `IN_PROGRESS` → **`ACTIONABLE`**\n**Website:** [https://happytails.tips](https://happytails.tips)\n**Wireframe Reference:** [https://docs.google.com/drawings/d/1ZGVrLyTSUYONCdJxBNHLzA3dfNq7QvJyZtS0AJQMRLI/edit?usp=sharing](https://docs.google.com/drawings/d/1ZGVrLyTSUYONCdJxBNHLzA3dfNq7QvJyZtS0AJQMRLI/edit?usp=sharing)\n\n---\n\n## **1. IMMEDIATE PREREQUISITES**\n### **Mandatory Backups & Environment Checks**\n- **Staging Site Validation:**\n  - Ensure the [staging environment](https://staging.happytails.tips) is **synced** with the live site (`happytails.tips`) via **WP Migrate Pro** or **All-in-One WP Migration**.\n  - Verify staging site functionality (e.g., Elementor editor access, form scripts, and responsive behavior) match the live site.\n  - **Test URL:** Confirm staging is accessible at `https://staging.happytails.tips` (no mixed-content warnings or broken assets).\n\n- **Access Requirements:**\n  - **WP-Admin Credentials:** Obtain read/write access to `happytails.tips/wp-admin` (role: **Administrator**).\n  - **Elementor Pro License:** Confirm active license for **Elementor Pro** (version ≥ **3.20.0**) to edit global templates.\n  - **File Permissions:** Ensure SSH/FTP access to `/wp-content/uploads/` (for favicon) and `/wp-content/themes/` (for theme files).\n  - **Database Access:** Backup the `wp_options` table (critical for theme/customizer settings) via **phpMyAdmin** or **WP-CLI**:\n    ```bash\n    wp db export --path=/path/to/site/ --tables=wp_options backup_happytails_$(date +%Y%m%d).sql\n    ```\n\n- **Dependencies:**\n  - **Hero Image Retention:** Confirm the current hero image (3 animals) is **not** part of the header/footer update scope (per wireframe).\n  - **Logo Variations:** Validate all provided logo assets (`.svg`, `.png`, `.jpg`) are **optimized** (≤ **100KB**, 2x resolution for retina) and uploaded to `/wp-content/uploads/happytails-logos/` with consistent naming (e.g., `logo-primary.svg`, `logo-secondary.png`).\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **Step 1: Audit & Standardize Global Templates in Elementor**\n- **Tool:** Elementor Pro → **Site Settings** → **Global Templates**.\n- **Actions:**\n  - **Header Template:**\n    - Delete existing header templates (if any) under **Global Header**.\n    - Create a **new global header template** (`header-global`) with:\n      - **Logo:** Insert `logo-primary.svg` (centered, max-width: **200px**).\n      - **Navigation:** Replicate the wireframe’s primary menu (max 5 items, mobile hamburger icon via **Elementor Menu Widget**).\n      - **Copyright Section:** Add a **Text Editor Widget** with dynamic year (2024) using Elementor’s **Dynamic Content** (shortcode: `[current_year]`).\n      - **Responsive Rules:**\n        - **Desktop (≥1024px):** Logo left-aligned, menu horizontal.\n        - **Tablet (768–1023px):** Logo centered, menu collapsible.\n        - **Mobile (<767px):** Logo full-width, menu hamburger-only (icon: **FA: Bars**).\n      - **CSS Overrides:** Apply via **Elementor Customizer** (or child theme’s `style.css`):\n        ```css\n        /* Header Consistency */\n        .happytails-header {\n          background: #ffffff;\n          padding: 15px 0;\n          box-shadow: 0 2px 5px rgba(0,0,0,0.1);\n        }\n        .happytails-header .elementor-menu {\n          justify-content: flex-start;\n        }\n        .happytails-header .copyright-text {\n          font-size: 12px;\n          color: #888888;\n          text-align: center;\n          margin-top: 20px;\n        }\n        ```\n  - **Footer Template:**\n    - Delete existing footer templates under **Global Footer**.\n    - Create a **new global footer template** (`footer-global`) with:\n      - **Logo:** Insert `logo-secondary.png` (centered, max-width: **150px**).\n      - **Links:** Replicate wireframe’s footer columns (e.g., **About**, **Services**, **Contact**) using **Elementor Footer Widget**.\n      - **Copyright Section:** Add a **Text Editor Widget** with dynamic year (2024) and static text (e.g., \"© Happy Tails. All rights reserved.\").\n      - **Responsive Rules:**\n        - **Desktop (≥1024px):** 3-column layout, logo left-aligned.\n        - **Tablet (768–1023px):** 2-column layout, logo centered.\n        - **Mobile (<767px):** Single column, logo full-width.\n      - **CSS Overrides:** Apply via **Elementor Customizer**:\n        ```css\n        /* Footer Consistency */\n        .happytails-footer {\n          background: #f8f8f8;\n          padding: 30px 0;\n          border-top: 1px solid #e0e0e0;\n        }\n        .happytails-footer .elementor-footer-widget {\n          margin-bottom: 20px;\n        }\n        .happytails-footer .copyright-text {\n          font-size: 11px;\n          color: #666666;\n          text-align: center;\n          padding-top: 20px;\n        }\n        ```\n\n### **Step 2: Replace Favicon with Technical Precision**\n- **Tool:** **Real Favicon Generator** ([https://realfavicongenerator.net/](https://realfavicongenerator.net/)) or **Favicon.io**.\n- **Actions:**\n  - Upload the provided favicon assets (`.ico`, `.png`, `.svg`) to `/wp-content/uploads/` via **Media Library**.\n  - Generate **optimized favicon files** (all formats, including **Apple Touch Icon** for mobile).\n  - Replace existing favicon via **WP-Admin** → **Appearance** → **Customize** → **Site Identity**:\n    - Set **Favicon** to the generated `.ico` file.\n    - Add **Apple Touch Icon** (for iOS home screen) via **Theme Customizer** → **Additional CSS**:\n      ```css\n      /* Favicon & Mobile Meta Tags */\n      link[rel=\"apple-touch-icon\"] { display: none; }\n      link[rel=\"apple-touch-icon-precomposed\"] { display: none; }\n      link[rel=\"apple-touch-icon-precomposed\"]:after {\n        content: url(/wp-content/uploads/favicon/apple-touch-icon-precomposed.png);\n      }\n      ```\n  - **Hard Refresh:** Clear browser cache (`Ctrl + F5`) and test favicon across:\n    - Chrome, Firefox, Safari, Edge.\n    - Mobile devices (iOS/Android).\n\n### **Step 3: Apply Global Templates to Existing Pages**\n- **Tool:** Elementor Pro → **Page Editor**.\n- **Actions:**\n  - **Landing Page:**\n    - Open `https://happytails.tips/landing-page` in Elementor editor.\n    - **Header:** Replace with `header-global` template.\n    - **Footer:** Replace with `footer-global` template.\n    - **Verify:** Ensure no orphaned widgets (e.g., legacy copyright text) remain.\n  - **Natural Healing Section:**\n    - Open `https://happytails.tips/natural-healing` in Elementor editor.\n    - **Header:** Apply `header-global` template.\n    - **Footer:** Apply `footer-global` template.\n    - **Responsive Check:** Validate section-specific media queries (if any) don’t conflict with global templates.\n  - **Download Our Free Guide Section:**\n    - Open `https://happytails.tips/free-guide` in Elementor editor.\n    - **Header:** Apply `header-global` template.\n    - **Footer:** Apply `footer-global` template.\n    - **Form Integration:** Postpone favicon/header/footer work until the **form script** is implemented (see **Potential Pitfalls**).\n\n### **Step 4: Validate Dynamic Copyright Date**\n- **Tool:** **Elementor Dynamic Content** or **PHP Custom Code** (if shortcode fails).\n- **Actions:**\n  - Test the `[current_year]` shortcode in a **dummy page** (e.g., `https://staging.happytails.tips/test-copyright`).\n  - If shortcode doesn’t render, add **custom PHP** to `functions.php` (child theme):\n    ```php\n    // Dynamic Copyright Year (Elementor fallback)\n    add_shortcode('current_year', function() {\n      return date('Y');\n    });\n    ```\n  - **Regenerate:** Update all global templates to reflect the correct year (2024).\n\n### **Step 5: Cross-Environment Deployment & Cache Purge**\n- **Tool:** **WP-CLI**, **Elementor Sync**, or **FTP**.\n- **Actions:**\n  - **Deploy to Staging:**\n    - Sync global templates (`header-global`, `footer-global`) to staging via **Elementor Pro → Sync**.\n    - Upload favicon files to `/wp-content/uploads/` on staging.\n    - **Test:** Verify all changes render correctly in staging.\n  - **Deploy to Production:**\n    - **Backup First:** Run `wp db backup` and confirm `wp_options` is intact.\n    - Sync templates to live site (`happytails.tips`).\n    - Upload favicon files to live `/wp-content/uploads/`.\n    - **Cache Purge:**\n      - Clear **Elementor cache**:\n        ```bash\n        wp elementor clear-cache\n        ```\n      - Clear **server-side cache** (if using Nginx/Apache):\n        - **Nginx:** `sudo service nginx reload` + check `/var/log/nginx/error.log` for conflicts.\n        - **Apache:** `sudo service apache2 reload` + check `/var/log/apache2/error.log`.\n      - Clear **CDN cache** (if applicable, e.g., Cloudflare):\n        ```bash\n        wp cache flush --path=/wp-content/plugins/cloudflare/\n        ```\n  - **Post-Deployment:**\n    - Log into live WP-Admin and **re-save** global template settings to trigger updates.\n    - **Hard Refresh:** Clear all user caches (e.g., `https://happytails.tips/?clear_cache=1`).\n\n---\n\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **Functional Tests**\n| **Test Item**                          | **Expected Result**                                                                 | **Tool/Method**                          |\n|----------------------------------------|------------------------------------------------------------------------------------|-------------------------------------------|\n| Header consistency across all pages        | Identical `header-global` template (logo, menu, copyright)                          | Elementor Pro → **Preview Mode**          |\n| Footer consistency across all pages        | Identical `footer-global` template (logo, columns, copyright)                        | Elementor Pro → **Preview Mode**          |\n| Dynamic copyright date (2024)             | Renders `© 2024 Happy Tails` on all pages                                      | Inspect Element → **Live Site**           |\n| Favicon display                         | Visible in browser tab, bookmarks, and mobile home screen                            | [https://realfavicongenerator.net/favicon-checker](https://realfavicongenerator.net/favicon-checker) |\n| Mobile menu functionality                | Hamburger icon toggles menu (no JavaScript errors)                                   | Chrome DevTools → **Device Mode (iPhone 12)** |\n| Form section (post-implementation)      | No conflicts with global templates after form script is added                        | Elementor Pro → **Preview Mode**          |\n\n### **Responsive Validation**\n- **Breakpoints:**\n  - **Desktop:** 1024px+ (header: left-aligned logo; footer: 3 columns).\n  - **Tablet:** 768–1023px (header: centered logo; footer: 2 columns).\n  - **Mobile:** <767px (header: hamburger-only; footer: single column).\n- **Tools:**\n  - **Chrome DevTools** (Lighthouse audit for responsiveness).\n  - **BrowserStack** ([https://www.browserstack.com/](https://www.browserstack.com/)) for cross-device testing.\n  - **Elementor Responsive Editor** (validate widget-specific breakpoints).\n\n### **Performance & Security Checks**\n- **Favicon:**\n  - Load time ≤ **500ms** (test via [WebPageTest](https://www.webpagetest.org/)).\n  - No 404 errors in console.\n- **Global Templates:**\n  - No orphaned dependencies (e.g., missing fonts, broken images).\n  - **GTmetrix** score ≥ **85/100** for template-heavy pages.\n- **Backup Verification:**\n  - Restore `wp_options` backup to a **cloned staging site** and confirm no data loss.\n\n---\n\n## **4. POTENTIAL PITFALLS**\n### **1. Form Script Conflicts (Download Our Free Guide Section)**\n- **Risk:** The pending form script may rely on legacy header/footer hooks or CSS classes.\n- **Mitigation:**\n  - **Isolate Testing:** Complete header/footer updates **before** integrating the form script.\n  - **Conflict Audit:** Use **Chrome DevTools → Elements Panel** to check for overlapping classes (e.g., `.happytails-footer` vs. `.form-footer`).\n  - **Fallback Plan:** If conflicts arise, create a **page-specific template** for the form section and exclude it from global sync.\n\n### **2. Caching Delays (Favicon/Global Templates)**\n- **Risk:** CDN, browser, or plugin caches may delay visual updates post-deployment.\n- **Mitigation:**\n  - **Pre-Purge:** Clear caches **before** deploying to production.\n  - **Hard Refresh:** Instruct stakeholders to use `Ctrl + F5` or private browsing mode.\n  - **Cache Plugins:** Disable **Elementor Experimental Features** and **W3 Total Cache** temporarily if issues persist.\n\n### **3. SVG Logo Security (Favicon/Headers)**\n- **Risk:** SVG files may contain malicious code if not sanitized.\n- **Mitigation:**\n  - **Validate SVG:** Use [SVG Sanitizer](https://github.com/lukeapage/svg-sanitizer) or **Real Favicon Generator’s sanitizer**.\n  - **Restrict Uploads:** Set `wp-content/uploads/` permissions to **750** (owner: `www-data`, group: `www-data`):\n    ```bash\n    chmod -R 750 /wp-content/uploads/\n    chown -R www-data:www-data /wp-content/uploads/\n    ```\n\n---\n```"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: WooCommerce Stripe Payment Gateway Integration**\n\n## **1. IMMEDIATE PREREQUISITES**\n### **Access & Permissions**\n- **SSH Access:** Confirm read/write permissions to `/wp-content/plugins/woocommerce/` and `/wp-content/themes/[active-theme]/` directories.\n- **WP-Admin Credentials:** Ensure access to WooCommerce settings (`WooCommerce → Settings → Payments`).\n- **Stripe API Key:** Retrieve and securely store the **Live API Key** (for production) and **Test API Key** (for staging) in a password manager or environment variables (e.g., `.env` file or `wp-config.php`).\n- **Database Backup:** **Mandatory** – Create a full database backup via **WP-CLI** (`wp db export --path=/path/to/backup/`) or **phpMyAdmin** before proceeding.\n- **Staging Environment:** **Mandatory** – Deploy WooCommerce and Stripe integration to a staging site (e.g., `staging.example.com`) for thorough testing. Use a tool like **WP Staging** or **Duplicator** to replicate the live environment.\n- **HTTPS Verification:** Ensure the staging site has a valid SSL certificate (Stripe requires HTTPS for API calls).\n\n### **Environment Validation**\n- Verify WooCommerce version is **≥ 7.0** (latest stable) via `WooCommerce → Status`.\n- Check PHP version is **≥ 7.4** (Stripe PHP library requires PHP 7.4+).\n- Confirm `wp_remote_post()` and `curl` functions are enabled in PHP (`phpinfo()` or `wp-config.php`).\n- Disable caching plugins (e.g., **WP Rocket**, **W3 Total Cache**) or configure them to exclude `wp-admin` and `/checkout/` endpoints during testing.\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **Step 1: Install & Configure Stripe Plugin**\n1. **Plugin Installation:**\n   - Upload the latest **Stripe Payment Gateway for WooCommerce** plugin (v6.0+) via **WP-Admin** (`Plugins → Add New → Upload`) or **WP-CLI**:\n     ```bash\n     wp plugin install woocommerce-gateway-stripe --activate --path=/wp-content/plugins/\n     ```\n   - Verify plugin activation in `WooCommerce → Status → Plugins`.\n\n2. **API Key Setup:**\n   - Navigate to **WooCommerce → Settings → Payments → Stripe**.\n   - Enter the **Test API Key** (e.g., `pk_test_...`) for staging validation.\n   - Enable **\"Test Mode\"** to simulate transactions without live charges.\n   - Save settings.\n\n3. **Webhook Configuration:**\n   - Generate Stripe webhook signing secret via Stripe Dashboard (**Developers → Webhooks**).\n   - Add webhook endpoint in WooCommerce:\n     ```\n     https://staging.example.com/wp-admin/admin-ajax.php?action=stripe_webhook\n     ```\n   - Select events:\n     - `checkout.session.completed`\n     - `payment_intent.succeeded`\n     - `payment_intent.payment_failed`\n     - `charge.disputed`\n   - Save and verify webhook delivery by triggering a test event in Stripe Dashboard.\n\n4. **Plugin Settings Validation:**\n   - Set **Currency** to match WooCommerce (`WooCommerce → Settings → General`).\n   - Configure **Allowed Countries** and **Payment Methods** (e.g., credit cards, SEPA, ACH) based on client requirements.\n   - Enable **\"Save Cards\"** if recurring payments or subscriptions are needed.\n   - Set **Default Payment Method** to Stripe if applicable.\n   - Disable other payment gateways (e.g., PayPal, Cash on Delivery) temporarily for testing.\n\n---\n\n### **Step 2: Customize Stripe Integration (If Required)**\n1. **Override Default Stripe Templates (Optional):**\n   - Copy Stripe template files from `/wp-content/plugins/woocommerce-gateway-stripe/templates/` to `/wp-content/themes/[active-theme]/woocommerce-gateway-stripe/` to avoid plugin updates overwriting customizations.\n   - Modify files like:\n     - `stripe-payment-form.php` (for checkout field styling).\n     - `stripe-payment-method.php` (for saved payment methods display).\n   - Use **WooCommerce hooks** (e.g., `woocommerce_stripe_form_fields`) for dynamic adjustments without direct template edits.\n\n2. **API Version & Compliance Checks:**\n   - Ensure Stripe PHP library is updated (`/wp-content/plugins/woocommerce-gateway-stripe/vendor/stripe/stripe-php`).\n   - Validate compliance with **PCI DSS** requirements (Stripe handles tokenization, but ensure WooCommerce is configured to use Stripe’s hosted fields or Elements.js for sensitive data).\n\n3. **Inventory & Pricing Sync:**\n   - Verify WooCommerce **Stock Management** settings (`WooCommerce → Settings → Products → Inventory`) are enabled if real-time inventory updates are required.\n   - Test **Stripe Price ID** mapping (if using WooCommerce Subscriptions or custom products):\n     - Use `WC_Stripe_Product::sync_product_with_stripe()` to ensure product metadata (e.g., SKU, categories) aligns with Stripe’s `price` objects.\n     - Log discrepancies via `error_log()` in `/wp-content/plugins/woocommerce-gateway-stripe/includes/class-wc-stripe-product.php`.\n\n4. **SSH-Based Validation (Optional):**\n   - Check Stripe API logs in WooCommerce:\n     ```bash\n     grep \"stripe\" /wp-content/plugins/woocommerce-gateway-stripe/logs/woocommerce-stripe.log\n     ```\n   - Verify `wp_remote_post()` calls to Stripe endpoints (e.g., `/wp-content/plugins/woocommerce-gateway-stripe/includes/class-wc-stripe-api.php`).\n\n---\n\n### **Step 3: Staging Environment Testing**\n1. **Test Mode Transactions:**\n   - Use Stripe’s **Test Cards** (e.g., `4242 4242 4242 4242` for success, `4000 0000 0000 0002` for failure) to simulate purchases.\n   - Verify:\n     - Checkout page loads correctly.\n     - Stripe Elements/Hosted Fields render without errors.\n     - Test webhook events trigger order status updates in WooCommerce.\n\n2. **Order Flow Validation:**\n   - Place a test order and confirm:\n     - **Order Status:** Changes from `Processing` to `Completed` (or `Failed` for test failures).\n     - **Stripe Dashboard:** Reflects the test transaction with correct metadata (e.g., product name, total amount).\n     - **WooCommerce Orders:** Displays Stripe payment details (e.g., transaction ID, payment method).\n\n3. **Error Handling:**\n   - Force API errors by:\n     - Temporarily disabling Stripe’s test API key.\n     - Entering an invalid test card (e.g., `4000 0000 0000 0001` for \"card declined\").\n   - Verify WooCommerce displays **user-friendly error messages** (e.g., \"Payment failed. Please try another method.\").\n   - Check Nginx/Apache error logs for `500` or `403` responses:\n     ```bash\n     tail -n 50 /var/log/nginx/error.log | grep \"stripe\"\n     # OR\n     grep \"stripe\" /var/log/apache2/error.log\n     ```\n\n4. **Performance Benchmarking:**\n   - Measure checkout page load time (critical for conversions) using **WebPageTest** or **GTmetrix**.\n   - Ensure Stripe’s JavaScript (`stripe.js`) loads asynchronously and doesn’t block rendering.\n\n---\n\n### **Step 4: Live Environment Deployment (Post-QA)**\n1. **API Key Switch:**\n   - Replace **Test API Key** with **Live API Key** in `WooCommerce → Settings → Payments → Stripe`.\n   - Disable **\"Test Mode\"** and save settings.\n\n2. **Webhook Migration:**\n   - Recreate webhooks in Stripe Dashboard with the **Live API Key** and staging endpoint replaced with:\n     ```\n     https://live.example.com/wp-admin/admin-ajax.php?action=stripe_webhook\n     ```\n   - Verify webhook delivery by triggering a test event (e.g., `checkout.session.completed`) in Stripe Dashboard.\n\n3. **Post-Deployment Checks:**\n   - Confirm **PCI compliance** via Stripe Dashboard (**Settings → Compliance**).\n   - Monitor **WooCommerce → Status → Logs** for Stripe-related errors for **48 hours**.\n   - Validate **Nginx/Apache access logs** for successful Stripe API calls:\n     ```bash\n     grep \"api.stripe.com\" /var/log/nginx/access.log\n     ```\n\n4. **Client Handoff:**\n   - Provide a **README** with:\n     - Stripe Dashboard login credentials (if shared).\n     - Steps to **revert to test mode** (for future debugging).\n     - Contact details for support (e.g., Stripe’s [API Status Page](https://status.stripe.com/)).\n\n---\n\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **Functional Testing**\n| **Test Case**                          | **Expected Result**                                                                 | **Validation Method**                                                                 |\n|----------------------------------------|------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|\n| Stripe payment form renders on checkout     | Hosted Fields/Elements.js loads without JS errors.                                  | Browser console (`F12 → Console`), WebPageTest.                                       |\n| Test card transactions succeed            | Order status updates to `Completed` in WooCommerce.                                  | Stripe Dashboard + WooCommerce Orders.                                               |\n| Test card transactions fail               | Order status updates to `Failed`, user sees error message.                          | Stripe Dashboard + WooCommerce Orders + Browser error overlay.                        |\n| Webhook events trigger order updates      | `checkout.session.completed` updates order status in WooCommerce.                     | Stripe Dashboard → Test Webhook → Check WooCommerce order status.                     |\n| Saved cards functionality (if enabled)     | User can select saved payment method; no duplicate charges.                        | Place test order → Return to checkout → Select saved card → Verify no duplicate charge.   |\n| Subscription products (if applicable)       | Stripe Price ID syncs; recurring payments process correctly.                        | WooCommerce Subscriptions plugin + Stripe Dashboard.                                |\n\n### **Non-Functional Testing**\n- **Load Time:** Checkout page < **2.5s** (critical for conversions).\n- **Mobile Responsiveness:** Stripe form adapts to viewport (test on iOS/Android).\n- **Cross-Browser Compatibility:** No rendering issues on Chrome, Firefox, Safari, Edge.\n- **Error Logs:** No `stripe_*` errors in `/wp-content/plugins/woocommerce-gateway-stripe/logs/`.\n- **Database Overhead:** Query performance remains stable after integration (monitor via **Query Monitor**).\n\n### **Security Validation**\n- **HTTPS Enforcement:** All Stripe API calls use `https://`.\n- **No Hardcoded Keys:** API keys stored in `wp-config.php` or environment variables (not in plugin files).\n- **Webhook Signing:** Verify `stripe_webhook` handler processes signed events correctly (check `WC_Stripe_API::verify_webhook_signature()`).\n\n---\n\n## **4. POTENTIAL PITFALLS**\n### **API Key Exposure**\n- **Risk:** Hardcoding live API keys in theme/plugin files or version control (e.g., GitHub).\n- **Mitigation:**\n  - Use `wp-config.php` or a dedicated secrets manager (e.g., **VaultPress**).\n  - Exclude `/wp-config.php` from backups if it contains sensitive data.\n\n### **Webhook Delivery Failures**\n- **Risk:** Stripe webhook events not reaching WooCommerce due to:\n  - Incorrect endpoint URL.\n  - Firewall/blocklist rules (e.g., Nginx, Cloudflare).\n  - Missing `stripe-signature` header in requests.\n- **Mitigation:**\n  - **Pre-deployment:** Test webhook delivery in staging with `curl`:\n    ```bash\n    curl -X POST https://staging.example.com/wp-admin/admin-ajax.php?action=stripe_webhook \\\n    -H \"Stripe-Signature: whsec_...\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"type\":\"checkout.session.completed\",\"data\":{\"object\":{\"id\":\"cs_test_...\"}}}'\n    ```\n  - **Post-deployment:** Monitor `wp-content/plugins/woocommerce-gateway-stripe/logs/` for undelivered webhooks.\n\n### **Payment Method Restrictions**\n- **Risk:** Client requirements conflict with Stripe’s supported payment methods (e.g., local bank transfers not available in all regions).\n- **Mitigation:**\n  - Document unsupported methods in the **README**.\n  - Provide fallback options (e.g., \"This payment method is not available in your country\").\n\n### **Caching Plugin Conflicts**\n- **Risk:** Caching plugins (e.g., **WP Rocket**) may cache the checkout page, causing Stripe form failures or stale content.\n- **Mitigation:**\n  - Exclude `/checkout/` and `wp-admin` from cache rules.\n  - Test with caching disabled in staging.\n\n### **PHP Version Incompatibility**\n- **Risk:** Older PHP versions (<7.4) may fail to load Stripe’s dependencies.\n- **Mitigation:**\n  - Update PHP via server control panel (e.g., **cPanel**, **Plesk**) or `.htaccess`:\n    ```apache\n    <IfModule mod_php7.c>\n        php_flag engine on\n        php_value memory_limit 256M\n    </IfModule>\n    ```\n  - Verify via `php -v` and `phpinfo()`.\n```\n\n---\n**Next Steps:**\n- Assign task to developer with **staging credentials** and **QA checklist**.\n- Schedule **post-deployment review** for live environment validation.\n```"
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: Upside Therapy WordPress Website with Location & Phone Integration**\n**Project:** Upside Therapy Website Redesign\n**Status:** `IN_PROGRESS`\n**Owner:** [Your Name]\n**Last Updated:** [Date]\n\n---\n\n## **1. IMMEDIATE PREREQUISITES**\n### **Mandatory Backups & Environment Checks**\n- **Staging Environment Validation:**\n  - Confirm the staging site (`[STAGING_URL]`) is fully functional and mirrors production (plugins, themes, database, and server configuration).\n  - Verify domain redirection (if applicable) and SSL certificates are active in staging.\n  - Test WooCommerce (if used) with a sandbox payment gateway (e.g., Stripe Test Mode) to ensure transactional workflows are isolated.\n\n- **Production Environment Lockdown (if live updates are required):**\n  - **Backup Critical Assets:**\n    - Database: Use **WP-CLI** (`wp db export [DB_NAME].sql`) or **phpMyAdmin** to create a full backup of the production database.\n    - Files: Generate a **tar.gz** archive of `/wp-content/` via SSH (`tar -czvf wp-content-backup-$(date +%Y-%m-%d).tar.gz /wp-content/`).\n    - **Mandatory:** Store backups in a secure, off-site location (e.g., AWS S3, Google Drive, or a dedicated backup server).\n\n  - **Server-Level Safeguards:**\n    - Disable **Elementor Cloud Sync** temporarily in production to prevent unintended sync conflicts.\n    - Set up **Nginx/Apache rate limiting** for staging/production to avoid accidental traffic spikes during testing.\n    - If using **WooCommerce**, disable live shipping rates via `wp-config.php`:\n      ```php\n      define('WC_SHIPPING_ENABLED', 'no');\n      ```\n\n- **Access & Permissions:**\n  - Obtain **SSH access** to the server for file modifications and log inspection.\n  - Ensure **WordPress Admin (WP-Admin)** credentials are available for staging/production.\n  - Request **Elementor Pro** license keys and **WooCommerce** API credentials (if applicable) from the client.\n  - Verify **Google Maps API** access (if location-based features are required) and **phone verification API** (e.g., Twilio) credentials.\n\n- **Tooling & Dependencies:**\n  - Install **Elementor Pro** (version `[X.X.X]`) and **Elementor Addons** (e.g., **Elementor Hello Theme**, **Elementor Kit**, **WooCommerce Builder**).\n  - Review **Project Brief** (Google Doc) for:\n    - Required **location-based widgets** (e.g., Google Maps, custom address fields).\n    - **Phone number display/validation** logic (e.g., static vs. dynamic, click-to-call, or API-driven).\n    - **WooCommerce** shipping zone requirements (if applicable).\n  - Watch **Loom Video** to confirm UI/UX expectations for location/phone integration.\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **Phase 1: Environment Setup & Configuration**\n1. **Clone & Deploy Staging Site:**\n   - Use **WP Staging** or **Duplicator** to clone the production site to staging.\n   - Validate deployment by:\n     - Checking `wp-config.php` for staging-specific constants (e.g., `WP_DEBUG`, `WP_ENVIRONMENT_TYPE`).\n     - Ensuring `.htaccess`/`nginx.conf` redirects are disabled in staging.\n\n2. **Install & Configure Required Plugins/Themes:**\n   - **Elementor Pro:**\n     - Activate **Elementor Hello Theme** (or equivalent) and set as default.\n     - Enable **Elementor Experiences** (if popups/location-based interactions are needed).\n   - **Location-Based Plugins:**\n     - Install **[Plugin Name]** (e.g., **Elementor Google Maps**, **WP GeoDirectory**, or **Advanced Custom Fields (ACF) + ACF Google Maps Field]**).\n     - Configure API keys in plugin settings (e.g., `wp-admin/admin.php?page=acf-options` for ACF).\n     - Set up **geolocation services** (e.g., IP-based or browser-based via JavaScript).\n   - **Phone Integration Plugins:**\n     - Install **[Plugin Name]** (e.g., **WP Call Button**, **Twilio for WordPress**, or **ACF Phone Field + jQuery click-to-call**).\n     - Configure **Twilio API** (if used) in `wp-admin/admin.php?page=twilio-settings`:\n       ```php\n       // Example Twilio configuration (via plugin or custom code)\n       define('TWILIO_ACCOUNT_SID', '[YOUR_SID]');\n       define('TWILIO_AUTH_TOKEN', '[YOUR_TOKEN]');\n       define('TWILIO_PHONE_NUMBER', '+[YOUR_NUMBER]');\n       ```\n   - **WooCommerce (if applicable):**\n     - Install **WooCommerce** and **WooCommerce Shipping & Tax** plugins.\n     - Update **shipping zone settings** (`WooCommerce → Settings → Shipping → Shipping Zones`) to include location-based logic (e.g., radius-based zones, geolocation plugins).\n     - Disable **real-time shipping rates** during development (see `wp-config.php` above).\n\n3. **Server-Side Adjustments:**\n   - **Nginx/Apache:**\n     - Modify `nginx.conf` or `.htaccess` to enforce **HTTP/2** for better performance:\n       ```nginx\n       # Example Nginx HTTP/2 configuration\n       server {\n           listen 443 ssl http2;\n           listen [::]:443 ssl http2;\n           server_name upside-therapy-staging.[DOMAIN];\n           ...\n       }\n       ```\n     - Ensure **gzip/brotli compression** is enabled for static assets (CSS/JS).\n   - **PHP & Database:**\n     - Update `wp-config.php` to include:\n       ```php\n       define('WP_MEMORY_LIMIT', '256M');\n       define('WP_MAX_MEMORY_LIMIT', '512M');\n       ```\n     - Optimize database via **WP-Optimize** or **phpMyAdmin** (remove bloated tables, repair indexes).\n\n---\n\n### **Phase 2: Development & Implementation**\n4. **Design Location-Based UI Components:**\n   - **Google Maps Integration:**\n     - Use **Elementor Pro’s Google Maps widget** or **ACF Google Maps Field** to embed maps.\n     - Customize via **Elementor’s Advanced Customizer**:\n       - Set `map_height`/`map_width` to responsive values (e.g., `400px` or `100vh`).\n       - Configure `zoom_level` (e.g., `14` for clinic-level precision).\n       - Add **custom markers** via `marker_icon` (SVG/URL) and **info windows** with `marker_content`.\n     - **Fallback for Non-JS Users:** Implement a static map image (e.g., via **Mapbox Static API**) in `functions.php`:\n       ```php\n       add_filter('elementor/google_maps/fallback_image', function() {\n           return 'https://api.mapbox.com/styles/v1/[STYLE_ID]/static/[LAT],[LNG]/[ZOOM]/[WIDTH]x[HEIGHT]?access_token=[TOKEN]';\n       });\n       ```\n   - **Dynamic Address Display:**\n     - Use **ACF** to store location data (e.g., `field_group` for clinic addresses).\n     - Create a **custom Elementor widget** (via **Elementor’s Theme Builder**) or use **ACF’s Dynamic Content** to pull addresses into pages.\n     - Example `functions.php` snippet for dynamic address:\n       ```php\n       add_action('elementor/widgets/widgets_registered', function() {\n           \\Elementor\\Widgets_Manager::instance()->register_widget_type(new \\Upside_Therapy\\Dynamic_Address_Widget());\n       });\n       ```\n     - Style address fields with **CSS Grid/Flexbox** for alignment (e.g., `display: grid;` in `style.css`).\n\n5. **Implement Phone Number Logic:**\n   - **Static Phone Display:**\n     - Add phone numbers via **Elementor’s Text Editor widget** or **ACF** (e.g., `field_name: clinic_phone`).\n     - Use **CSS pseudo-elements** to format phone numbers (e.g., `::before` for country codes):\n       ```css\n       .phone-number::before { content: \"+1 \"; }\n       ```\n   - **Click-to-Call Functionality:**\n     - Use **jQuery** in `custom.js` (or **Elementor’s Custom JS** section):\n       ```javascript\n       jQuery(document).ready(function($) {\n           $('.phone-link').on('click', function() {\n               window.location = 'tel:' + $(this).data('phone');\n           });\n       });\n       ```\n     - Example HTML structure:\n       ```html\n       <a href=\"tel:5551234567\" class=\"phone-link\" data-phone=\"5551234567\">Call Us</a>\n       ```\n   - **API-Driven Phone Validation (if required):**\n     - Integrate **Twilio Verify API** via `functions.php`:\n       ```php\n       // Example Twilio verification hook\n       add_action('wp_ajax_twilio_verify_phone', 'twilio_verify_phone_callback');\n       function twilio_verify_phone_callback() {\n           $phone = sanitize_text($_POST['phone']);\n           $service_sid = '[YOUR_SERVICE_SID]';\n           $verification = \\Twilio\\Rest\\Verify\\V2\\Service::verify($service_sid, $phone);\n           wp_send_json_success($verification);\n       }\n       ```\n     - Add a **custom Elementor form** with AJAX submission to trigger validation.\n\n6. **WooCommerce Shipping Zone Logic (if applicable):**\n   - **Geolocation-Based Shipping:**\n     - Use **WooCommerce Geolocation** plugin to auto-detect user location.\n     - Configure **shipping zones** with **radius-based rules** (e.g., 50-mile radius for local delivery).\n     - Set **default zone** in `functions.php`:\n       ```php\n       add_filter('woocommerce_shipping_location', function($location) {\n           return array(\n               'country' => 'US',\n               'state'   => 'CA',\n               'postcode'=> '90210',\n               'city'    => 'Los Angeles',\n               'address'  => '123 Main St'\n           );\n       });\n       ```\n   - **Dynamic Shipping Costs:**\n     - Use **ACF + WooCommerce Integration** to pull location data into shipping calculations.\n     - Example: Add a **custom field** (`clinic_shipping_cost`) to products and display it via `functions.php`:\n       ```php\n       add_action('woocommerce_product_options_shipping', 'add_clinic_shipping_field');\n       function add_clinic_shipping_field() {\n           woocommerce_wp_text_input(array(\n               'id' => '_clinic_shipping_cost',\n               'label' => __('Clinic Shipping Cost', 'woocommerce'),\n               'placeholder' => 'Enter cost (e.g., $10)',\n               'description' => __('Override standard shipping for clinic-based orders.', 'woocommerce')\n           ));\n       }\n       ```\n\n---\n\n### **Phase 3: Testing & Optimization**\n7. **Staging Environment Validation:**\n   - **Location Accuracy Tests:**\n     - Use **Google Maps API’s Geocoding Service** to verify address parsing (e.g., `https://maps.googleapis.com/maps/api/geocode/json?address=[ADDRESS]`).\n     - Test **IP-based geolocation** (if used) via tools like [IP2Location](https://www.ip2location.com/).\n   - **Phone Functionality Tests:**\n     - Verify **click-to-call** works on mobile/desktop (test in Chrome/Firefox/Safari).\n     - If using **Twilio Verify**, test with valid/invalid phone numbers to confirm API responses.\n   - **WooCommerce Shipping Tests:**\n     - Simulate orders from different locations (via **WooCommerce Shipping & Tax plugin’s test tools**).\n     - Validate **radius-based zones** and **dynamic cost overrides**.\n\n8. **Performance Optimization:**\n   - **Asset Loading:**\n     - Defer **non-critical JS** (e.g., Google Maps API) until after page load:\n       ```html\n       <script src=\"https://maps.googleapis.com/maps/api/js?key=[YOUR_KEY]&callback=initMap\" defer></script>\n       ```\n     - Lazy-load images with `loading=\"lazy\"` in Elementor’s **Image widget settings**.\n   - **Caching:**\n     - Configure **WP Rocket** or **LiteSpeed Cache** to exclude:\n       - `/wp-admin/` (admin pages).\n       - `/elementor/` (Elementor dynamic content).\n       - `/wc-api/` (WooCommerce API endpoints).\n     - Test **cache invalidation** for location/phone updates (e.g., purge cache after ACF changes).\n\n9. **Cross-Browser & Device Testing:**\n   - **Browsers:** Chrome (latest), Firefox (latest), Safari (latest), Edge.\n   - **Mobile:** Test Google Maps/phone interactions on iOS/Android (via **BrowserStack** or physical devices).\n   - **Responsive Design:**\n     - Validate **CSS media queries** for location/phone components:\n       ```css\n       /* Example: Adjust map on mobile */\n       @media (max-width: 767px) {\n           .elementor-widget-el-google-maps {\n               height: 300px !important;\n           }\n       }\n       ```\n     - Use **Elementor’s Responsive Controls** to test widget behavior at `1024px`, `768px`, and `480px` breakpoints.\n\n10. **Security & Compliance Checks:**\n    - **Phone Data:**\n      - Ensure **GDPR/CCPA compliance** if storing user phone numbers (e.g., use **ACF’s encrypted fields**).\n      - Validate **Twilio API logs** for data handling (if applicable).\n    - **Location Data:**\n      - Check for **cookie consent compliance** (if using browser-based geolocation).\n      - Use **HTTPS** for all API calls (e.g., Google Maps, Twilio).\n    - **WooCommerce:**\n      - Verify **PCI compliance** for payment gateways (if live).\n      - Test **CSRF protection** in custom shipping logic.\n\n---\n\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **Functional Tests**\n| **Component**               | **Test Case**                                                                 | **Pass/Fail** |\n|-----------------------------|-----------------------------------------------------------------------------|--------------|\n| Google Maps Widget          | Map loads correctly with default location.                                       |              |\n|                            | Custom markers display info windows with clinic details.                          |              |\n|                            | Fallback image appears when JS is disabled.                                      |              |\n| Dynamic Address Fields      | ACF/Elementor pulls and displays correct address data.                         |              |\n|                            | Address formatting (CSS) is consistent across devices.                          |              |\n| Phone Click-to-Call        | Clicking phone link initiates call on mobile/desktop.                         |              |\n|                            | Phone number is correctly parsed (e.g., `+1 (555) 123-4567`).                   |              |\n| Twilio Phone Validation     | API returns `200 OK` for valid phone numbers.                                 |              |\n|                            | API returns `400 Bad Request` for invalid numbers.                           |              |\n| WooCommerce Shipping Zones  | Radius-based zones apply correctly for test locations.                          |              |\n|                            | Dynamic shipping costs override standard rates when applicable.                    |              |\n\n### **Performance Tests**\n| **Metric**                  | **Threshold**       | **Test Method**                                                                 |\n|-----------------------------|--------------------|-------------------------------------------------------------------------------|\n| Page Load Time (Desktop)    | < 2s              | Lighthouse (Chrome DevTools) or GTmetrix.                                        |\n| Page Load Time (Mobile)     | < 3s              | Lighthouse (Throttling: Slow 3G).                                               |\n| Total JS Payload           | < 200KB           | WebPageTest → \"Filmstrip View\" to analyze JS load order.                      |\n| CSS Payload                | < 150KB           | WebPageTest → \"Waterfall\" to check critical CSS.                              |\n| API Requests (Geolocation) | < 5 per page      | Chrome DevTools → Network tab → Filter by \"XHR\".                              |\n| Cache Hit Ratio            | > 90%             | Query Monitor plugin → \"Cache\" tab.                                           |\n\n### **Security Tests**\n| **Check**                   | **Validation**                                                                 |\n|-----------------------------|-------------------------------------------------------------------------------|\n| HTTPS Enforcement           | All API calls (Google Maps, Twilio) use `https://`.                          |\n| CSRF Protection             | WooCommerce custom endpoints include `wp_nonce` checks.                        |\n| Data Encryption (ACF)      | Phone/location fields are marked as \"Encrypted\" in ACF settings.            |\n| Cookie Consent              | Geolocation prompts appear only after user consent (if applicable).               |\n\n### **Visual Regression Tests**\n- **Elementor:**\n  - Use **Elementor’s Undo/Redo** to revert accidental changes.\n  - Compare staging vs. production in **Elementor’s Revision History** (`Update Options → Revision History`).\n- **CSS:**\n  - Run **PurgeCSS** to audit unused styles:\n    ```bash\n    npx purgecss --css ./assets/css/style.css --content ./**/*.php --output ./assets/css/purged-style.css\n    ```\n- **BrowserStack:**\n  - Capture screenshots of location/phone components across 5+ devices/browsers.\n\n---\n\n## **4. POTENTIAL PITFALLS**\n### **1. Geolocation API Limitations & Fallbacks**\n   - **Risk:** Google Maps/Twilio APIs may have **rate limits** or **cost implications** for high-volume usage.\n   - **Mitigation:**\n     - Implement **local storage caching** for geolocation data (e.g., store last known location in `sessionStorage`).\n     - Use **fallback static maps** (as outlined in Phase 2) to avoid JS dependency.\n     - Monitor API usage via **Google Cloud Console** or **Twilio Debugger**.\n   - **Example Fallback Code:**\n     ```javascript\n     // Check if geolocation is supported\n     if (!navigator.geolocation) {\n         console.warn('Geolocation not supported. Using fallback.');\n         $('.fallback-map').show(); // Display static map\n     }\n     ```\n\n### **2. WooCommerce Shipping Zone Conflicts**\n   - **Risk:** Custom shipping logic may **override default rates incorrectly**, causing cart errors or miscalculations.\n   - **Mitigation:**\n"
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: WordPress Footer Integration with Company Information**\n\n## **1. IMMEDIATE PREREQUISITES**\n### **Mandatory Backups & Environment Validation**\n- **Staging Environment Requirement**:\n  - **Deploy to a staging site** (e.g., `staging.clubworks.com` or equivalent) **before any live modifications**.\n  - Ensure the staging site is a **full mirror** of the production environment (WordPress core, plugins, themes, database).\n  - Verify **child theme inheritance** (if using a parent theme like Astra, Divi, or similar) to avoid overwriting customizations.\n\n- **Access Requirements**:\n  - **SFTP/SSH access** to the WordPress installation directory (`/wp-content/`).\n  - **WP-Admin credentials** with `Theme Editor` and `Plugin Editor` permissions.\n  - **Theme files** (preferably a child theme) for custom CSS/HTML modifications.\n  - **Mockup PDF** reviewed for exact specifications (logo dimensions, spacing, typography, link behavior).\n\n- **Dependencies**:\n  - Confirm **Elementor Pro** (or equivalent page builder) is installed and activated for dynamic footer editing.\n  - Verify **WooCommerce** is not conflicting with footer placement (if applicable to the site structure).\n  - Check for existing **custom footer templates** or **static footer blocks** in the theme to avoid duplication.\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **Step 1: Footer Structure & Static Content Implementation**\n- **Option A (Elementor-Based)**:\n  - Navigate to **Elementor → Theme Builder → Footer**.\n  - Create a **new footer template** (e.g., `Footer_CompanyInfo`).\n  - Add a **Widget Area** or **HTML widget** to the template.\n  - Insert the following **static HTML** (adjust classes/IDs per theme requirements):\n    ```html\n    <div class=\"footer-company-info\" style=\"background-color: #1F2A4A; padding: 20px 0;\">\n      <div class=\"footer-content\">\n        <div class=\"footer-logo\">\n          <a href=\"https://clubworks.com/\" target=\"_blank\" rel=\"noopener noreferrer\">\n            <img src=\"[PATH_TO_CLUBWORKS_LOGO]\" alt=\"ClubWorks Logo\" width=\"[EXACT_WIDTH]\" height=\"[EXACT_HEIGHT]\">\n          </a>\n        </div>\n        <div class=\"footer-companies\">\n          <ul>\n            <li><a href=\"https://peacockandlewis.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Peacock & Lewis</a></li>\n            <li><a href=\"https://www.jbd-jga.com/\" target=\"_blank\" rel=\"noopener noreferrer\">JBD-JGA</a></li>\n            <li><a href=\"https://ggapartners.com/\" target=\"_blank\" rel=\"noopener noreferrer\">GGA Partners</a></li>\n            <li><a href=\"https://www.privateclubfilms.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Private Club Films</a></li>\n            <li><a href=\"https://clubworks.com/partner-firms/clubworks-engineering/\" target=\"_blank\" rel=\"noopener noreferrer\">ClubWorks Engineering</a></li>\n            <li><a href=\"https://buffalogroupe.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Buffalo Groupe</a></li>\n            <li><a href=\"https://kdcarchitects.com/\" target=\"_blank\" rel=\"noopener noreferrer\">KDC Architects</a></li>\n          </ul>\n        </div>\n      </div>\n    </div>\n    ```\n  - **Logo Handling**:\n    - Upload the **ClubWorks logo** to `/wp-content/uploads/` via **Media Library** (or use an existing file).\n    - Replace `[PATH_TO_CLUBWORKS_LOGO]` with the **full URL** (e.g., `https://clubworks.com/wp-content/uploads/logo.svg`).\n    - Set **exact dimensions** (e.g., `width=\"150\" height=\"50\"`) as per the mockup.\n\n- **Option B (Theme Files Direct Edit)**:\n  - Locate the **footer template file** (e.g., `/wp-content/themes/[THEME_NAME]/footer.php`).\n  - **Modify the file** to include the static HTML block above **before** `<?php get_footer(); ?>`.\n  - **Add inline CSS** for background color (`#1F2A4A`) and padding, or reference a **custom CSS class** in the theme’s `style.css`.\n\n### **Step 2: Typography & Styling Configuration**\n- **Font Family**:\n  - Add the following **CSS snippet** to **Appearance → Customize → Additional CSS** (or `/wp-content/themes/[THEME_NAME]/style.css` if using a child theme):\n    ```css\n    .footer-company-info .footer-logo img,\n    .footer-company-info .footer-companies ul li a {\n      font-family: '[REQUIRED_FONT_FAMILY]'; /* e.g., 'Arial, sans-serif' or 'Roboto' */\n    }\n    ```\n  - Replace `[REQUIRED_FONT_FAMILY]` with the **exact font family** specified in the mockup (e.g., `'Montserrat', sans-serif`).\n  - If using **Google Fonts**, ensure the font is **enqueued** in the theme’s `functions.php`:\n    ```php\n    function clubworks_footer_fonts() {\n      wp_enqueue_style('clubworks-footer-fonts', 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500&display=swap');\n    }\n    add_action('wp_enqueue_scripts', 'clubworks_footer_fonts');\n    ```\n\n- **Link Styling**:\n  - Add CSS to ensure links match the mockup (e.g., hover effects, underline behavior):\n    ```css\n    .footer-company-info .footer-companies ul li a {\n      color: #FFFFFF; /* or specified link color */\n      text-decoration: none; /* or 'underline' if required */\n      transition: color 0.3s ease;\n    }\n    .footer-company-info .footer-companies ul li a:hover {\n      color: #A0B3E0; /* hover color */\n      text-decoration: underline;\n    }\n    ```\n\n- **Logo Alignment**:\n  - Use **Flexbox** or **Grid** to align logo and company list per mockup:\n    ```css\n    .footer-content {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      max-width: 1200px;\n      margin: 0 auto;\n      padding: 0 20px;\n    }\n    .footer-companies ul {\n      list-style: none;\n      padding: 0;\n      display: flex;\n      flex-wrap: wrap;\n      gap: 15px;\n    }\n    ```\n\n### **Step 3: Responsive Media Queries & Device Testing**\n- **Mobile Responsiveness**:\n  - Modify the CSS to stack logo and companies vertically on small screens (e.g., `<768px`):\n    ```css\n    @media (max-width: 767px) {\n      .footer-content {\n        flex-direction: column;\n        gap: 15px;\n      }\n      .footer-companies ul {\n        flex-direction: column;\n        text-align: center;\n      }\n    }\n    ```\n  - Adjust **logo dimensions** and **padding** for mobile (e.g., `width=\"100\"`).\n\n- **Tablet Adjustments** (if needed):\n  - Add a **media query for tablets** (e.g., `768px–991px`) to fine-tune spacing.\n\n### **Step 4: WooCommerce & Plugin Conflict Resolution (If Applicable)**\n- **Check for Overrides**:\n  - If the site uses **WooCommerce**, inspect `/wp-content/plugins/woocommerce/templates/` for custom footer files.\n  - Disable **conflicting plugins** (e.g., custom footer plugins) temporarily to test footer behavior.\n  - Clear **WooCommerce transients** (`wp_options` table) if shipping/payment-related footer conflicts exist:\n    ```sql\n    DELETE FROM wp_options WHERE option_name LIKE '%woocommerce_%';\n    ```\n\n### **Step 5: Deployment to Production**\n- **Staging Validation**:\n  - Test the footer **across all major browsers** (Chrome, Firefox, Safari, Edge) and devices (mobile/desktop/tablet).\n  - Verify **no 404 errors** for logo or company links (use **Browser DevTools → Network tab**).\n  - Check **load performance** (footer should not impact page speed; optimize images if needed).\n\n- **Live Site Deployment**:\n  - **Push changes to production** via **Git (preferred)** or **manual SFTP upload** (only if Git is unavailable).\n  - **Update theme files** in `/wp-content/themes/[THEME_NAME]/` (or child theme).\n  - **Clear all caches**:\n    - WordPress cache (e.g., WP Rocket, W3 Total Cache).\n    - Browser cache (hard refresh or incognito mode).\n    - CDN cache (e.g., Cloudflare, if used).\n  - **Re-enable plugins** and test for conflicts.\n\n---\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **Visual & Functional Validation**\n| **Test Item**                          | **Validation Criteria**                                                                 | **Tool/Method**                          |\n|----------------------------------------|--------------------------------------------------------------------------------------|------------------------------------------|\n| **Logo Display**                       | Logo renders correctly, links to `clubworks.com`, no distortion.                          | Browser, DevTools                         |\n| **Company Links**                      | All 7 links open in new tabs, no broken URLs.                                          | Browser, `curl`/`wget` for URL checks       |\n| **Background Color**                   | Solid `#1F2A4A` (RGB: 31, 42, 74) with no bleed or opacity issues.                   | Browser, Color Picker                     |\n| **Typography**                         | Font family matches mockup, no rendering discrepancies.                                  | Browser, DevTools                         |\n| **Responsive Layout**                  | Logo and companies stack vertically on mobile (`<768px`), no overflow.                   | Chrome DevTools, Firefox Responsive Mode   |\n| **WooCommerce Integration**            | Footer does not interfere with checkout/cart pages (if applicable).                           | WooCommerce → Status → Tools → Clear Transients |\n| **Cross-Browser Compatibility**        | Consistent rendering in Chrome, Firefox, Safari, Edge.                               | BrowserStack, LambdaTest (if available)    |\n| **Performance Impact**                 | Footer adds `<500ms` to page load time (optimized images/CSS).                          | GTmetrix, Pingdom                       |\n| **Accessibility (a11y)**                | Links have `aria-label` if images are used, sufficient color contrast.                   | WAVE, aXe                              |\n| **Error Logs**                         | No PHP/JS errors in `/wp-content/debug.log` or Nginx/Apache logs.                     | `tail -f /var/log/nginx/error.log` (SSH) |\n\n### **Automated Checks (Post-Deployment)**\n- Run **WP-CLI health check**:\n  ```bash\n  wp health check\n  ```\n- Validate **HTML/CSS syntax** using:\n  ```bash\n  wp theme check /wp-content/themes/[THEME_NAME]\n  ```\n\n---\n## **4. POTENTIAL PITFALLS**\n1. **Theme Updates Overwriting Customizations**:\n   - If using a **child theme**, ensure all modifications are in the child theme’s files (not the parent).\n   - **Risk**: Parent theme updates may revert footer changes.\n   - **Mitigation**:\n     - Document all customizations in `README.md` within the child theme.\n     - Use **Elementor Theme Builder** (Option A) to avoid direct file edits.\n\n2. **Caching Delays**:\n   - **Risk**: Browser/CDN/WordPress caches may delay footer visibility post-deployment.\n   - **Mitigation**:\n     - **Clear caches manually** before testing.\n     - Add a **cache-busting query** to logo/image URLs if static caching is suspected:\n       ```html\n       <img src=\"[LOGO_URL]?v=2.1\" alt=\"ClubWorks Logo\">\n       ```\n\n3. **WooCommerce Footer Conflicts**:\n   - **Risk**: WooCommerce may inject its own footer content, overriding or duplicating the custom footer.\n   - **Mitigation**:\n     - Use **Elementor’s WooCommerce integration** to ensure footer placement priority.\n     - Disable WooCommerce’s default footer via:\n       ```php\n       add_filter('woocommerce_footer_html', '__return_empty_string');\n       ```\n\n4. **Mobile Logo Scaling Issues**:\n   - **Risk**: Logo may appear too large/small on mobile devices.\n   - **Mitigation**:\n     - Test **exact logo dimensions** on mobile (use `max-width: 100%` in CSS if needed).\n     - Ensure **SVG/PNG** format is used (avoid JPG for logos).\n\n---\n## **5. POST-TASK HANDOFF**\n- **Documentation**:\n  - Update the **mockup PDF** with a screenshot of the live implementation.\n  - Add a **code snippet** to the project’s `docs/` folder for future reference.\n- **Rollback Plan**:\n  - Provide a **Git revert command** or **SFTP backup instructions** for quick rollback if issues arise.\n- **Monitoring**:\n  - Set up **UptimeRobot** alerts for the footer section (if critical).\n  - Log **Nginx/Apache access errors** for 48 hours post-deployment.\n```\n\n---\n**Note**: Replace placeholders (e.g., `[THEME_NAME]`, `[REQUIRED_FONT_FAMILY]`) with actual values from the project. Adjust steps based on whether the site uses a **page builder (Elementor)** or **direct theme edits**."
+        },
+        "pairedItem": {
+          "item": 5
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: Homepage Hero Section Implementation**\n\n## **1. IMMEDIATE PREREQUISITES**\n### **Mandatory Backups & Environment Validation**\n- **Staging Environment Requirement**:\n  - Deploy the task to a **staging site** (e.g., `staging.example.com`) that mirrors the live production environment (`example.com`).\n  - Confirm the staging site is **fully isolated** (no direct user traffic, no impact on live sales or SEO).\n  - Verify **WordPress version**, **PHP version**, and **theme/plugin compatibility** (e.g., Astra, Divi, or custom theme) via `wp-cli --info` or WP-Admin → **Dashboard → Server Info**.\n\n- **Theme & Asset Access**:\n  - Obtain **read/write access** to the theme’s `/templates/`, `/includes/`, and `/assets/` directories via **SFTP/SSH** or **WP-Admin → Appearance → Theme File Editor**.\n  - Ensure **existing theme color scheme** (e.g., CSS variables, SASS maps, or hardcoded hex/RGB values) is documented. If undocumented, extract via:\n    - **DevTools (Chrome/Firefox)** → Inspect elements → Check computed styles for `background-color`, `color`, `border-color`, etc.\n    - **Theme’s `style.css`** or **customizer settings** (`/wp-admin/customize.php`).\n  - Validate **image optimization tools** (e.g., ShortPixel, Imagify, or Smush) are active and configured for the staging site.\n\n- **Dependencies**:\n  - Confirm **Elementor Pro** (or equivalent page builder) is installed and activated on the staging site.\n  - Check for **slider plugins** (e.g., MetaSlider, Soliloquy, or Elementor’s native slider) and ensure compatibility with the theme.\n  - If using **WooCommerce**, verify the staging site has the same **shipping zones, payment gateways, and cart settings** as production.\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **Step 1: Design System & Color Scheme Integration**\n- **Extract Existing Palette**:\n  - Run `grep -r \"color:\" /path/to/theme/assets/` to identify hardcoded colors in CSS/JS.\n  - Document all **primary/secondary colors**, **text hues**, and **button states** (e.g., `:hover`, `:active`) in a **design system spec** (e.g., Figma/Adobe XD).\n- **Define Hero Section Colors**:\n  - Align hero text, subheading, and CTA button colors with the theme’s palette.\n  - Example (if palette uses CSS variables):\n    ```css\n    :root {\n      --hero-text-color: #ffffff; /* Extracted from theme */\n      --hero-bg-color: #2a2a2a; /* Extracted from theme */\n      --cta-button-primary: #ff6b6b; /* Extracted from theme */\n      --cta-button-secondary: #4ecdc4; /* Extracted from theme */\n    }\n    ```\n- **Create Design Mockups**:\n  - Generate **responsive wireframes** (desktop, tablet, mobile) for the hero section using tools like **Figma**, **Sketch**, or **Penpot**.\n  - Specify **breakpoints** (e.g., `768px`, `1024px`) and **adaptive layout rules** (e.g., text size, padding adjustments).\n\n---\n\n### **Step 2: Implement Background Image Slider (Performance-Optimized)**\n- **Option A: Elementor Native Slider (Recommended for Simplicity)**\n  - **Add Slider Widget**:\n    - Navigate to **Elementor → Edit Homepage** → Drag **\"Slider\"** widget into the hero section container.\n    - Configure slider settings:\n      - **Loop**: Disabled (unless client requires it).\n      - **Autoplay**: Enabled with **30s delay** (adjustable via `elementor-slider-settings`).\n      - **Transition**: **Fade** (smoother than slide; reduce motion blur).\n      - **Pause on Hover**: Enabled (improves UX for mobile).\n  - **Optimize Slide Images**:\n    - Upload **WebP-compressed** versions of hero images (e.g., `hero-slide-1.webp`, `hero-slide-2.webp`).\n    - Set **max dimensions** (e.g., `1920x1080px`) and **quality** (e.g., `80%`) via **Media Library → Bulk Edit**.\n    - Implement **lazy loading** for slider images:\n      ```html\n      <img loading=\"lazy\" src=\"slide-1.webp\" alt=\"Hero Slide 1\" class=\"elementor-slide\">\n      ```\n    - Use **CSS `object-fit: cover`** to maintain aspect ratio without stretching:\n      ```css\n      .elementor-slide img {\n        object-fit: cover;\n        width: 100%;\n        height: 100%;\n      }\n      ```\n  - **Slider Container Styling**:\n    - Modify the slider container’s **CSS** to ensure full-width responsiveness:\n      ```css\n      .elementor-slider-container {\n        width: 100%;\n        height: 60vh; /* Adjust based on design */\n        min-height: 400px; /* Fallback for mobile */\n        margin: 0;\n        padding: 0;\n      }\n      ```\n    - Override **default slider arrows** (if needed) via:\n      ```css\n      .elementor-slider .elementor-slider-pagination,\n      .elementor-slider .elementor-slider-arrows {\n        display: none !important;\n      }\n      ```\n\n- **Option B: Custom Slider (Advanced, e.g., Swiper.js)**\n  - **Install Swiper.js**:\n    - Add via **npm** (`npm install swiper`) or **direct CDN** in `functions.php`:\n      ```php\n      function enqueue_swiper() {\n        wp_enqueue_script('swiper-bundle', 'https://unpkg.com/swiper@8/swiper-bundle.min.js', [], null, true);\n        wp_enqueue_style('swiper-css', 'https://unpkg.com/swiper@8/swiper-bundle.min.css');\n      }\n      add_action('wp_enqueue_scripts', 'enqueue_swiper');\n      ```\n  - **Create Custom Slider HTML/JS**:\n    - Add slider markup in `/templates/hero-section.php`:\n      ```html\n      <div class=\"hero-slider swiper\">\n        <div class=\"swiper-wrapper\">\n          <div class=\"swiper-slide\">\n            <img src=\"<?php echo get_template_directory_uri(); ?>/assets/images/hero-slide-1.webp\" alt=\"Slide 1\" class=\"hero-slide-img\">\n            <div class=\"hero-slide-content\">\n              <h1 class=\"hero-slide-headline\"><?php echo esc_html(get_theme_mod('hero_headline')); ?></h1>\n              <p class=\"hero-slide-subheading\"><?php echo esc_html(get_theme_mod('hero_subheading')); ?></p>\n              <div class=\"hero-slide-cta\">\n                <a href=\"<?php echo esc_url(get_theme_mod('hero_cta_url')); ?>\" class=\"button-primary\"><?php echo esc_html(get_theme_mod('hero_cta_text')); ?></a>\n                <a href=\"<?php echo esc_url(get_theme_mod('hero_secondary_cta_url')); ?>\" class=\"button-secondary\"><?php echo esc_html(get_theme_mod('hero_secondary_cta_text')); ?></a>\n              </div>\n            </div>\n          </div>\n          <!-- Repeat for additional slides -->\n        </div>\n        <!-- Add pagination/navigation if required -->\n      </div>\n      ```\n    - Initialize Swiper in `/assets/js/hero-slider.js`:\n      ```js\n      document.addEventListener('DOMContentLoaded', function() {\n        const heroSlider = new Swiper('.hero-slider', {\n          loop: false,\n          autoplay: {\n            delay: 30000,\n            disableOnInteraction: false,\n          },\n          pagination: {\n            el: '.swiper-pagination',\n            clickable: true,\n          },\n          navigation: {\n            nextEl: '.swiper-button-next',\n            prevEl: '.swiper-button-prev',\n          },\n          lazy: true,\n          effect: 'fade',\n          fadeEffect: {\n            crossFade: true,\n          },\n        });\n      });\n      ```\n  - **Performance Optimizations**:\n    - Enable **Swiper’s lazy loading** for images/videos.\n    - Set **preload slides** to `1` (balance between performance and UX):\n      ```js\n      preloadImages: true,\n      lazyPreloadPrevNext: 1,\n      ```\n    - Use **CSS `will-change: transform`** for smoother transitions:\n      ```css\n      .hero-slider .swiper-slide {\n        will-change: transform;\n      }\n      ```\n\n---\n\n### **Step 3: Responsive Layout & Breakpoint Adjustments**\n- **CSS Media Queries**:\n  - Modify `/assets/css/hero-section-responsive.css` (or theme’s `style.css`) to add breakpoints:\n    ```css\n    /* Tablet (768px) */\n    @media (max-width: 768px) {\n      .hero-slider {\n        height: 50vh;\n      }\n      .hero-slide-headline {\n        font-size: 2.5rem;\n        line-height: 1.2;\n      }\n      .hero-slide-subheading {\n        font-size: 1.2rem;\n        max-width: 80%;\n      }\n      .hero-slide-cta {\n        flex-direction: column;\n        gap: 1rem;\n      }\n    }\n\n    /* Mobile (480px) */\n    @media (max-width: 480px) {\n      .hero-slider {\n        height: 40vh;\n      }\n      .hero-slide-headline {\n        font-size: 2rem;\n      }\n      .hero-slide-subheading {\n        font-size: 1rem;\n      }\n      .hero-slide-cta .button-primary,\n      .hero-slide-cta .button-secondary {\n        width: 100%;\n      }\n    }\n    ```\n- **Elementor Responsive Controls**:\n  - If using Elementor, adjust **widget-level responsiveness** for:\n    - **Headline text**: Reduce font size to `2rem` on mobile.\n    - **Subheading**: Set `max-width: 80%` on tablet/mobile.\n    - **CTA buttons**: Stack vertically on mobile (`flex-direction: column`).\n    - **Slider height**: Scale proportionally (e.g., `60vh` → `50vh` → `40vh`).\n\n- **Viewport Meta Tag**:\n  - Ensure `/header.php` includes:\n    ```html\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    ```\n\n---\n\n### **Step 4: Load Optimization & Asset Management**\n- **Critical CSS Inlining**:\n  - Use **Autoptimize** or **WP Rocket** to inline **critical CSS** for the hero section (reduce render-blocking).\n  - Alternatively, manually extract hero-specific CSS via **Penthouse** or **Critical Path CSS Generator**.\n\n- **Image CDN & Caching**:\n  - Configure **Cloudflare** or **Imagify CDN** to serve slider images with:\n    - **WebP conversion** (fallback to JPEG/PNG).\n    - **Cache TTL**: `1 week` (balance between freshness and performance).\n    - **Responsive images**: Ensure `srcset` is generated for all slider images.\n\n- **Slider Preloading**:\n  - Preload the first slider image in `/header.php`:\n    ```php\n    function preload_hero_slider() {\n      echo '<link rel=\"preload\" href=\"' . get_template_directory_uri() . '/assets/images/hero-slide-1.webp\" as=\"image\" fetchpriority=\"high\">';\n    }\n    add_action('wp_head', 'preload_hero_slider');\n    ```\n\n- **Lazy-Load Non-Critical JS**:\n  - Defer Swiper.js (or Elementor slider scripts) via:\n    ```php\n    function defer_swiper_script() {\n      if (is_page('home')) {\n        wp_add_inline_script('swiper-bundle', 'initSwiper();', 'deferred');\n      }\n    }\n    add_action('wp_enqueue_scripts', 'defer_swiper_script');\n    ```\n\n---\n\n### **Step 5: Cross-Browser & Device Testing (Staging)**\n- **BrowserStack/LambdaTest**:\n  - Test hero section on:\n    - **Desktop**: Chrome (latest), Firefox (latest), Safari (latest), Edge.\n    - **Tablet**: iPad Pro (iOS), Samsung Tab (Android).\n    - **Mobile**: iPhone 13 (iOS), Pixel 6 (Android), Galaxy S22 (Android).\n  - Verify:\n    - **Slider transitions** are smooth (no jank).\n    - **Text alignment** (e.g., `text-align: center`) is consistent.\n    - **CTA buttons** are touch-friendly on mobile (min `48x48px` padding).\n\n- **Lighthouse Audit**:\n  - Run **Google Lighthouse** (via Chrome DevTools or `npm install lighthouse`) on staging to check:\n    - **Performance**: Ensure **LCP (Largest Contentful Paint)** is `< 2.5s` (slider images should load within budget).\n    - **Accessibility**: Verify **color contrast** (e.g., hero text on dark background) meets **WCAG AA**.\n    - **Best Practices**: No mixed content warnings, proper `alt` text for images.\n\n- **GTmetrix/Pingdom**:\n  - Confirm **total page load time** is within acceptable thresholds (e.g., `< 3s`).\n  - Check **slider-specific metrics**:\n    - **TTFB (Time to First Byte)**: `< 500ms` (server response time).\n    - **Image compression savings**: `> 50%` reduction from originals.\n\n---\n\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **Functional Tests**\n| **Test**                          | **Method**                                                                 | **Pass/Fail** |\n|-----------------------------------|----------------------------------------------------------------------------|--------------|\n| Slider autoplay works (30s delay)   | Open staging homepage → Verify slides advance without manual interaction.         |              |\n| Pause on hover enabled             | Hover over slider → Verify autoplay stops.                                        |              |\n| Lazy loading for images             | Open DevTools → Network tab → Check slider images load with `loading=\"lazy\"`.       |              |\n| Full-width responsiveness           | Resize browser → Verify hero section spans 100% width at all breakpoints.           |              |\n| CTA buttons are clickable          | Tap/click buttons on mobile/desktop → Verify navigation works.                     |              |\n| No console errors                  | Open DevTools → Console → Verify no errors during slider interaction.               |              |\n\n### **Visual & UX Tests**\n| **Test**                          | **Method**                                                                 | **Pass/Fail** |\n|-----------------------------------|----------------------------------------------------------------------------|--------------|\n| Text colors match theme palette     | Compare hero text/subheading/CTA colors with documented theme palette.           |              |\n| Typography scales correctly         | Inspect font sizes at `320px`, `768px`, `1024px`, and `1920px` via DevTools.    |              |\n| No layout shifts (CLS)             | Lighthouse audit → Check Cumulative Layout Shift score (`< 0.1`).                  |              |\n| Touch targets are sized properly     | Mobile: Verify buttons/links are `≥ 48x48px` (WCAG).                         |              |\n| Accessibility (ARIA labels)        | Audit with **axe DevTools** → Ensure slider has `role=\"region\"` and buttons have `aria-label`. |              |\n\n### **Performance Tests**\n| **Test**                          | **Tool**               | **Target**          | **Pass/Fail** |\n|-----------------------------------|------------------------|---------------------|--------------|\n| LCP (Slider image)                | Lighthouse             | `< 2.5s`           |              |\n| TTFB                              | GTmetrix               | `< 500ms`          |              |\n| Total page weight                  | WebPageTest            | `< 2MB`            |              |\n| WebP fallback support             | CanIUse.com           | Works on all browsers |              |\n| No render-blocking resources       | Chrome DevTools → Coverage | 0 blocking resources |              |\n\n### **Cross-Browser/Device Validation**\n- **Desktop**:\n  - Chrome: Verify slider animations.\n  - Firefox: Check font rendering.\n  - Safari: Ensure no layout quirks.\n  - Edge: Validate CSS transitions.\n- **Tablet**:\n  - iOS: Test pinch-to-zoom behavior.\n  - Android: Check slider swipe responsiveness.\n- **Mobile**:\n  - iOS/Android: Verify no horizontal overflow, buttons are touchable.\n\n---\n\n## **4. POTENTIAL PITFALLS**\n### **1. Render-Blocking Critical Resources**\n- **Risk**: Unoptimized CSS/JS for the slider may delay **LCP**, hurting SEO and UX.\n- **Mitigation**:\n  - Use **Autoptimize** or **WP Rocket** to inline critical CSS.\n  - Defer non-critical JS (e.g., Swiper initialization) until after DOM load.\n  - Test with **Lighthouse → Performance** to confirm no render-blocking issues.\n\n### **2. Inconsistent Theme Color Palette**\n- **Risk**: Undocumented or conflicting color values may result in visual mismatches.\n- **Mitigation**:\n  - **Audit all theme files** (`grep -r \"#hex\" /path/to/theme/`) to centralize color usage.\n  - If using **CSS variables**, ensure they’re defined in `/assets/css/variables.css` and imported globally.\n  - Validate colors via **DevTools → Computed Styles** at each breakpoint.\n\n### **3. Mobile Touch Target Failures**\n- **Risk**: CTA buttons or slider controls may be too small for mobile users (violates WCAG).\n- **Mitigation**:\n  - Enforce **min `48x48px` touch targets** via CSS:\n    ```css\n    .hero-slide-cta a {\n      min-width: 144px;\n      min-height: 48px;\n      padding: 12px 24px;\n    }\n    ```\n  - Test with **BrowserStack → Mobile Devices** or **real devices**.\n\n### **4. Slider Plugin Conflicts**\n- **Risk**: Third-party slider plugins (e.g., MetaSlider) may conflict with theme/Elementor.\n- **Mitigation**:\n  - **Test in staging first** with all plugins activated.\n  - If using **Elementor native slider**, disable other"
+        },
+        "pairedItem": {
+          "item": 6
+        }
+      },
+      {
+        "json": {
+          "output": "```markdown\n# **Technical Action Plan: Mobile & Tablet Responsiveness Review & Fixes**\n**Task Status:** OPEN\n**Priority:** High (Critical UX/Functionality Impact)\n**Estimated Duration:** 3–5 days (depending on complexity and dependencies)\n\n---\n\n## **1. IMMEDIATE PREREQUISITES**\n### **1.1. Access & Permissions**\n- **Mandatory:** SSH access to the server with `sudo` privileges.\n- **Mandatory:** Access to the CMS (WordPress) admin dashboard (`wp-admin`).\n- **Mandatory:** Access to the following plugins/themes:\n  - **Elementor Pro** (if used for page layouts).\n  - **WooCommerce** (if e-commerce pages are affected).\n  - **Custom theme** (if not using a page builder).\n  - **CSS preprocessor tools** (Sass/Less if applicable).\n- **Mandatory:** Browser DevTools (Chrome, Firefox, or Safari) for emulation and debugging.\n- **Mandatory:** Mobile/tablet devices (iOS/Android) for manual testing.\n\n### **1.2. Backup & Staging Environment**\n- **⚠️ MANDATORY WARNING:**\n  - **Live Site:** If this task involves a live production environment, **immediately create a full backup** (database + files) using:\n    ```bash\n    wp db export --path=/var/www/html/wp-content/uploads/backup/ full_backup.sql\n    rsync -avz --delete /var/www/html/ /var/www/html/backup/\n    ```\n  - **Staging Site:** If a staging environment exists, **validate the current state** against the live site to ensure parity. If not, **deploy a duplicate of the live environment** to staging for testing.\n  - **Version Control:** Ensure all critical files (e.g., `style.css`, `theme.php`, WooCommerce plugins) are committed to Git (or equivalent) before making changes.\n\n### **1.3. Tooling & Dependencies**\n- **Verify:** Ensure `Autoptimize` or similar caching plugins are **disabled** during testing to avoid stale CSS/JS.\n- **Verify:** Confirm no active **CSS/JS minification** is occurring (may obscure debugging).\n- **Verify:** Check for **third-party integrations** (e.g., payment gateways, analytics) that may inject custom CSS/JS.\n\n---\n\n## **2. TECHNICAL EXECUTION STEPS**\n### **2.1. Audit Current Mobile/Tablet Layouts**\n- **Action:** Use **Browser DevTools** (Chrome: `Ctrl+Shift+M` or `F12 > Device Toolbar`) to test the following breakpoints:\n  - **Mobile:** `320px–767px` (iPhone SE, iPhone 12, Samsung Galaxy S21).\n  - **Tablet:** `768px–1023px` (iPad Mini, iPad Pro, Samsung Tab S7).\n- **Focus Areas:**\n  - **Overlapping Elements:** Inspect `position`, `z-index`, and `flexbox/grid` properties in `style.css`, `theme.php`, and custom CSS snippets.\n  - **Font Scaling:** Check `em`/`rem` units vs. `px` in typography rules (e.g., `body`, `.elementor-heading`, WooCommerce product titles).\n  - **Button/Link Spacing:** Validate `padding`, `margin`, and `touch-action` (e.g., `.elementor-button`, `.woocommerce button`).\n  - **Grid Systems:** Audit `container queries` (if supported), `@media` rules, and `max-width` constraints in:\n    - **Elementor:** `Customizer > Theme Builder > Global Settings > Responsive`.\n    - **WooCommerce:** `Settings > Shipping > Shipping Zones` (for mobile-specific overrides).\n    - **Custom Theme:** `assets/css/style.css`, `assets/css/responsive.css`, or theme-specific media query files.\n- **Tools:**\n  - **Lighthouse CI:** Run automated audits for `responsive design` and `accessibility` (mobile emulation).\n  - **CSS Coverage:** Use `Chrome DevTools > Coverage` to identify unused media queries.\n\n### **2.2. Implement Fixes**\n#### **2.2.1. CSS & Theme Adjustments**\n- **Modify Media Queries:**\n  - **Target Files:** `style.css`, `theme.php`, or Elementor’s `global-responsive.css` (if applicable).\n  - **Actions:**\n    - Replace `px`-based fixed widths with `max-width` + `vw`/`vh` units for fluid containers.\n    - Adjust `flex-direction` and `grid-template-columns` for tablet/mobile views (e.g., switch from `grid` to `column` for `768px`).\n    - Override `!important` declarations in custom CSS if they conflict with responsive rules.\n    - Example:\n      ```css\n      /* Before (fixed width) */\n      .product-grid { width: 1000px; }\n\n      /* After (responsive) */\n      .product-grid {\n        width: 100%;\n        max-width: 1024px;\n      }\n\n      @media (max-width: 768px) {\n        .product-grid { grid-template-columns: 1fr; }\n      }\n      ```\n- **Touch Target Validation:**\n  - Ensure all interactive elements (`buttons`, `links`, `form inputs`) meet **WCAG 2.1** standards (≥ `48x48px`).\n  - Add `touch-action: manipulation;` to prevent accidental zooming/panning on touch elements.\n  - Example:\n    ```css\n    .elementor-button, .woocommerce button {\n      min-height: 48px;\n      min-width: 48px;\n      touch-action: manipulation;\n    }\n    ```\n\n#### **2.2.2. WooCommerce-Specific Fixes**\n- **Action:** If e-commerce pages are affected:\n  - **Update Shipping Zones:** Navigate to `WooCommerce > Settings > Shipping > Shipping Zones` and validate mobile/tablet-specific overrides.\n  - **Modify Product Layout:**\n    - Adjust `WC_Product::get_price_html()` output for mobile (e.g., force single-column pricing tables).\n    - Override `woocommerce/archive-product.php` template if needed (copy to child theme first).\n  - **Fix Cart/Checkout:**\n    - Ensure `woocommerce/cart/cart-totals.php` and `woocommerce/checkout/form-shipping.php` use responsive tables or stacked layouts.\n    - Validate `input[type=\"submit\"]` and `input[type=\"radio\"]` touch targets.\n\n#### **2.2.3. JavaScript & Dynamic Content**\n- **Action:** If issues persist with dynamic content (e.g., sliders, tabs):\n  - **Inspect JS:** Check `console.log()` for errors in `window.matchMedia()` or responsive JS hooks.\n  - **Modify Breakpoints:** Update JS-based responsive logic (e.g., in `theme.js`, `elementor-frontend.js`) to align with CSS.\n  - **Example:**\n    ```javascript\n    // In theme.js or custom JS\n    if (window.matchMedia('(max-width: 768px)').matches) {\n      document.querySelector('.dynamic-element').style.flexDirection = 'column';\n    }\n    ```\n\n### **2.3. Test & Validate Changes**\n- **Action:** Deploy fixes to the **staging environment** first (or use a local dev site with `wp-env`).\n- **Tools:**\n  - **BrowserStack:** Test across real devices (iOS/Android) and browsers (Safari, Chrome for Android).\n  - **LambdaTest:** Cross-device automation for regression checks.\n- **Manual Testing:**\n  - Navigate through all **major pages** (Home, Shop, Product, Cart, Checkout, Account, Blog, Contact).\n  - Verify **no horizontal scrolling** is required on any viewport.\n  - Check **font readability** (avoid sub-`14px` text without scaling).\n  - Confirm **touch targets** are accessible (no double-taps needed).\n\n### **2.4. Performance Optimization**\n- **Action:** Post-fix, optimize responsive assets:\n  - **Lazy-Load Images:** Ensure `loading=\"lazy\"` is set on `<img>` tags in mobile views.\n  - **Compress CSS:** Use `Autoptimize` or `WP Rocket` to combine/minify responsive CSS (re-enable post-testing).\n  - **Critical CSS:** Generate mobile-specific critical CSS to reduce render-blocking (tools: `Critical CSS`, `Above the Fold`).\n  - **Example Nginx Optimization (if applicable):**\n    ```nginx\n    # Add mobile-specific cache rules in nginx.conf\n    map $http_accept $mobile_accept {\n      default 0;\n      \"~*text/html\" 1;\n    }\n\n    server {\n      location / {\n        add_header X-Responsive-Cache \"mobile\" if $mobile_accept;\n        proxy_cache_path /var/cache/nginx/mobile levels=1:2 keys_zone=mobile:10m inactive=60m use_temp_path=off;\n      }\n    }\n    ```\n\n### **2.5. Documentation & Handoff**\n- **Action:** Document all changes in:\n  - **Git Commit Messages:** Reference breakpoints fixed (e.g., `FIX: Tablet grid overlap at 768px`).\n  - **README.md:** Add a \"Responsive Fixes\" section with:\n    - Before/after screenshots (use `Firefox Responsive Design Mode`).\n    - List of modified files (e.g., `style.css`, `woocommerce/archive-product.php`).\n    - Known limitations (e.g., \"iPad Pro 12.9\" requires manual zoom for some text).\n- **Handoff to QA/DevOps:**\n  - Provide **staging URL** for final review.\n  - Flag any **third-party dependencies** (e.g., payment gateways) that may need re-testing.\n\n---\n\n## **3. QUALITY ASSURANCE (QA) CHECKLIST**\n### **3.1. Visual & Functional Validation**\n| **Test**                          | **Tool/Method**                          | **Pass/Fail Criteria**                                                                 |\n|------------------------------------|-------------------------------------------|---------------------------------------------------------------------------------------|\n| No overlapping elements on mobile/tablet | Chrome DevTools (320px–1024px)             | All elements visible; no `overflow: hidden` masking critical content.                   |\n| Font scaling works (no clipping)      | Firefox Responsive Design Mode             | Text remains legible; no `em`/`rem` unit conflicts.                                      |\n| Touch targets ≥ 48x48px              | WCAG 2.1 Validator (BrowserStack)         | Manual tap testing confirms no precision issues.                                        |\n| Single-column layouts on mobile       | Chrome DevTools (320px–480px)             | No horizontal scroll; grids/tables stack vertically.                                  |\n| WooCommerce cart/checkout flows       | BrowserStack (real devices)                 | All buttons/inputs functional; no misaligned labels.                                  |\n| Dynamic content (sliders, tabs)     | Console.log + manual interaction           | No JS errors; content reflows correctly on resize.                                     |\n\n### **3.2. Cross-Browser & Device Testing**\n- **Test on:**\n  - **Mobile:** iPhone SE (iOS 15+), Samsung Galaxy S21 (Android 11+), Pixel 5.\n  - **Tablet:** iPad Mini (iOS 15+), iPad Pro 12.9 (iOS 16+), Samsung Tab S7.\n  - **Browsers:** Safari (latest), Chrome for Android (latest), Firefox for Android.\n- **Automated Checks:**\n  - Run **Lighthouse CI** with `responsive` preset (score ≥ 90).\n  - Validate **no console errors** during mobile emulation.\n\n### **3.3. Performance Regression**\n- **Test:**\n  - **Page Load Time:** Ensure no >10% increase on mobile (use `WebPageTest`).\n  - **CSS/JS Bloat:** Confirm responsive media queries don’t add excessive unused rules (`Chrome Coverage Tool`).\n  - **Server Logs:** Check Nginx/Apache logs for `404` or `500` errors post-deploy.\n\n### **3.4. Edge Cases**\n- **Test:**\n  - **Orientation Changes:** Rotate device between portrait/landscape; verify no layout jumps.\n  - **Custom User Agents:** Force mobile/tablet UA in DevTools; check for inconsistencies.\n  - **Payment Gateway Simulators:** Test `Stripe`, `PayPal`, or `Square` mobile flows (if applicable).\n\n---\n\n## **4. POTENTIAL PITFALLS**\n### **4.1. Caching Conflicts**\n- **Risk:** Stale CSS/JS caches may delay perceived fixes.\n- **Mitigation:**\n  - **Hard Refresh:** Use `Ctrl+F5` or `Cmd+Shift+R` during testing.\n  - **Cache Plugins:** Disable `WP Rocket`, `W3 Total Cache`, or `Autoptimize` temporarily.\n  - **Nginx/Apache:** Clear browser cache headers or restart web server:\n    ```bash\n    sudo systemctl restart nginx  # or apache2\n    ```\n\n### **4.2. Third-Party CSS/JS Overrides**\n- **Risk:** Payment gateways (e.g., `Stripe.js`), analytics (`Google Tag Manager`), or ad networks may inject non-responsive styles.\n- **Mitigation:**\n  - **Inspect Overrides:** Use `Chrome DevTools > Sources > Overrides` to identify external scripts.\n  - **Isolate Custom Rules:** Scope fixes to `!important` only if necessary (document rationale).\n  - **Test Integrations:** Re-run payment gateway/analytics tests post-deploy to ensure no breakage.\n\n### **4.3. WooCommerce Template Inheritance Issues**\n- **Risk:** Directly modifying WooCommerce core files (e.g., `archive-product.php`) may break updates.\n- **Mitigation:**\n  - **Child Theme Overrides:** Always copy templates to `/wp-content/child-theme/` before editing.\n  - **Hooks & Filters:** Prefer `add_filter()`/`add_action()` for CSS/JS changes (e.g., `woocommerce_product_grid_columns`).\n  - **Version Pinning:** If using custom plugins, pin WooCommerce version in `composer.json` or `wp-config.php`.\n\n### **4.4. Browser-Specific Quirks**\n- **Risk:** Safari’s `viewport` handling or Android’s `font-size` scaling may differ from Chrome.\n- **Mitigation:**\n  - **Vendor Prefixes:** Add `-webkit-` prefixes for `flexbox`/`grid` if needed.\n  - **Safari-Specific Fixes:** Test with `Safari Technology Preview` for early detection.\n  - **Example Safari Workaround:**\n    ```css\n    @media (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {\n      /* iPad Pro Retina-specific adjustments */\n      .product-image { width: 50vw; }\n    }\n    ```\n\n---\n```"
+        },
+        "pairedItem": {
+          "item": 7
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Formatting response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLAMA": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatting response": {
+      "main": [
+        [
+          {
+            "node": "LLAMA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "e601fefb-c7c8-4969-a4f5-d1c5ebcf16ac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "877aee74a0a2e2e56c282a106f79c1ef3407946268c6f44dcd0f791b51816276"
+  },
+  "id": "9EdFrLt84KqWz2CsK3pIo",
+  "tags": []
+}
